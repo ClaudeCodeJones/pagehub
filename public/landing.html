@@ -7,7 +7,7 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <style>
     /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,7 +46,7 @@
     }
 
     .nav-brand-name {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Bricolage Grotesque', sans-serif;
       font-size: 18px;
       font-weight: 700;
       color: #fff;
@@ -97,26 +97,26 @@
 
     .hero-inner {
       max-width: 760px;
-      padding: 0 24px 80px;
+      padding: 0 24px 20px;
     }
 
     .hero-eyebrow {
       display: inline-block;
       margin-bottom: 28px;
-      padding: 5px 16px;
+      padding: 10px 32px;
       border-radius: 100px;
       border: 1px solid rgba(129, 140, 248, 0.3);
       background: rgba(129, 140, 248, 0.1);
       color: #818CF8;
-      font-size: 12px;
+      font-size: 24px;
       font-weight: 600;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
       text-transform: uppercase;
     }
 
     .hero-headline {
-      font-family: 'Syne', sans-serif;
-      font-size: 64px;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 88px;
       font-weight: 800;
       color: #fff;
       line-height: 1.07;
@@ -166,7 +166,7 @@
 
     .tools-heading {
       text-align: center;
-      font-family: 'Syne', sans-serif;
+      font-family: 'Bricolage Grotesque', sans-serif;
       font-size: 36px;
       font-weight: 800;
       color: #1E1B4B;
@@ -234,22 +234,69 @@
       letter-spacing: 0.1px;
     }
 
-    /* ── Responsive ── */
-    @media (max-width: 960px) {
-      .tools-grid { grid-template-columns: repeat(3, 1fr); }
-      .tools { padding: 72px 28px 64px; }
+    /* ── TOOLS BAND ── */
+    .tools-band {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      background: #1E1B4B;
+      height: 52px;
+    }
+    .tools-band-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      padding: 0 4px;
+    }
+    .tools-band-item:last-child { border-right: none; }
+    .tools-band-item:nth-child(odd)  { color: #F8FAFC; }
+    .tools-band-item:nth-child(even) { color: #F59E0B; }
+    .tools-band-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .tools-band-link:hover { opacity: 0.75; }
+
+    /* ── MOBILE BLOCK ── */
+    .mobile-block {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #1E1B4B;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      gap: 1.5rem;
+      z-index: 9999;
+    }
+    .mobile-block img { height: 48px; width: auto; }
+    .mobile-block h2 {
+      color: #F8FAFC;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .mobile-block p {
+      color: #818CF8;
+      font-size: 15px;
+      margin: 0;
+      line-height: 1.6;
     }
 
-    @media (max-width: 680px) {
-      .nav { padding: 0 20px; }
-      .nav-brand-name { font-size: 16px; }
-      .nav-launch { padding: 8px 16px; font-size: 13px; }
-      .hero-headline { font-size: 38px; letter-spacing: -0.02em; }
-      .hero-sub { font-size: 17px; }
-      .hero-cta { font-size: 16px; padding: 15px 32px; }
-      .tools-heading { font-size: 28px; }
-      .tools-grid { grid-template-columns: repeat(2, 1fr); }
-      .tools { padding: 60px 16px 48px; }
+    @media (max-width: 900px) {
+      body > * { display: none !important; }
+      .mobile-block { display: flex !important; }
     }
   </style>
 </head>
@@ -262,73 +309,28 @@
         style="height: 120px; width: auto; margin-bottom: 2.5rem; display: block; margin-left: auto; margin-right: auto;">
       <span class="hero-eyebrow">PDF Toolkit · 10 Tools</span>
       <h1 class="hero-headline">
-        Every PDF tool you need.<br />Nothing you don't.
+        Every PDF<br />tool <span style="color:#F59E0B">you</span> need.
       </h1>
       <p class="hero-sub">
-        Merge, split, sign, redact, convert and more — all in one place, all in your browser.
+        Merge, split, redact and more — all in your browser.
       </p>
       <a href="/app" class="hero-cta">Launch PageHub →</a>
     </div>
   </section>
 
-  <!-- ── TOOLS GRID ────────────────────────────────────────────────────────── -->
-  <section class="tools">
-    <h2 class="tools-heading">10 tools. Zero friction.</h2>
-    <p class="tools-sub">Everything you need to work with PDFs, nothing you don't.</p>
-
-    <div class="tools-grid">
-      <div class="tool-card">
-        <span class="tool-icon">🔀</span>
-        <div class="tool-name">Merge PDFs</div>
-        <div class="tool-desc">Combine multiple PDFs into one</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">✂️</span>
-        <div class="tool-name">Split PDF</div>
-        <div class="tool-desc">Extract pages or ranges as a zip</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">🔄</span>
-        <div class="tool-name">Rotate Pages</div>
-        <div class="tool-desc">Fix orientation on any page</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">#️⃣</span>
-        <div class="tool-name">Page Numbers</div>
-        <div class="tool-desc">Add numbers in any position</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">📄</span>
-        <div class="tool-name">Headers &amp; Footers</div>
-        <div class="tool-desc">Stamp text on every page</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">🗜️</span>
-        <div class="tool-name">Compress PDF</div>
-        <div class="tool-desc">Reduce file size instantly</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">💧</span>
-        <div class="tool-name">Watermark</div>
-        <div class="tool-desc">Brand or protect your documents</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">⬛</span>
-        <div class="tool-name">Redact</div>
-        <div class="tool-desc">Black out sensitive information</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">📋</span>
-        <div class="tool-name">Form Filler</div>
-        <div class="tool-desc">Fill interactive PDF forms</div>
-      </div>
-      <div class="tool-card">
-        <span class="tool-icon">🔍</span>
-        <div class="tool-name">PDF Info</div>
-        <div class="tool-desc">Inspect metadata and dimensions</div>
-      </div>
-    </div>
-  </section>
+  <!-- ── TOOLS BAND ────────────────────────────────────────────────────────── -->
+  <div class="tools-band">
+    <span class="tools-band-item">Merge PDFs</span>
+    <span class="tools-band-item">Split PDF</span>
+    <span class="tools-band-item">Rotate Pages</span>
+    <span class="tools-band-item">Page Numbers</span>
+    <span class="tools-band-item">Headers &amp; Footers</span>
+    <span class="tools-band-item">Watermark</span>
+    <span class="tools-band-item">Compress PDF</span>
+    <span class="tools-band-item">Redact</span>
+    <span class="tools-band-item">Form Filler</span>
+    <span class="tools-band-item">PDF Info</span>
+  </div>
 
   <!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
   <footer class="footer">
@@ -336,6 +338,14 @@
       style="height: 24px; width: auto; opacity: 0.85; display: inline-block; vertical-align: middle; margin-right: 8px;">
     &mdash; Built for internal use
   </footer>
+
+  <!-- ── MOBILE BLOCK ─────────────────────────────────────────────────────── -->
+  <div class="mobile-block">
+    <img src="/logos/pagehub_logo_white.webp" alt="PageHub">
+    <h2>Desktop only</h2>
+    <p>PageHub is designed for desktop use.<br>
+    Please open on a computer or larger screen.</p>
+  </div>
 
 </body>
 </html>

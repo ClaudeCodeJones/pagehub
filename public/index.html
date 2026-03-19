@@ -7,7 +7,7 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -70,7 +70,16 @@
           <span class="nav-icon">ℹ</span>PDF Info
         </button>
       </div>
+
+      <div class="nav-group">
+        <span class="nav-group-label">Admin</span>
+        <button class="nav-item" data-tool="stats">
+          <span class="nav-icon">📊</span>Usage Stats
+        </button>
+      </div>
     </nav>
+
+    <button class="theme-toggle" id="theme-toggle">🌙 Dark mode</button>
 
     <div class="sidebar-footer">
       <span class="badge-amber">10 Tools</span>
@@ -636,6 +645,20 @@
       </div>
     </section>
 
+    <!-- ══ STATS ══════════════════════════════════════════════════════════════ -->
+    <section class="tool-view" id="view-stats">
+      <div class="tool-header">
+        <span class="tool-header-glyph" aria-hidden="true">📊</span>
+        <div class="tool-header-content">
+          <h1>Usage Stats</h1>
+          <p>How many times each tool has been used.</p>
+        </div>
+      </div>
+      <div class="tool-body stats-body" id="stats-body">
+        <div class="stats-empty">No tools used yet — get started!</div>
+      </div>
+    </section>
+
   </main>
 
   <!-- CDN libraries — loaded before app.js so globals are available -->
@@ -643,5 +666,13 @@
   <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="/js/app.js"></script>
+
+  <!-- ── MOBILE BLOCK ─────────────────────────────────────────────────────── -->
+  <div class="mobile-block">
+    <img src="/logos/pagehub_logo_white.webp" alt="PageHub">
+    <h2>Desktop only</h2>
+    <p>PageHub is designed for desktop use.<br>
+    Please open on a computer or larger screen.</p>
+  </div>
 </body>
 </html>

@@ -2,6 +2,12 @@
    PageHub — app.js  (fully client-side, no server API calls)
 ══════════════════════════════════════════════════════════════════════════════ */
 
+/* ── Theme persistence — runs before any render ─────────────────────────────── */
+(function () {
+  if (localStorage.getItem('pagehub-theme') === 'dark')
+    document.documentElement.setAttribute('data-theme', 'dark');
+})();
+
 /* ── CDN globals (null-safe destructure) ────────────────────────────────────── */
 let PDFDocument, rgb, StandardFonts, degrees;
 if (typeof PDFLib !== 'undefined') {
@@ -220,6 +226,26 @@ function requirePDFLib(resultEl) {
   return true;
 }
 
+/* ── Usage tracking ─────────────────────────────────────────────────────────── */
+const USAGE_KEY = 'pagehub-usage';
+
+function getUsage() {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return { merge: 0, split: 0, rotate: 0, pagenumbers: 0, headerfooter: 0,
+           watermark: 0, compress: 0, redact: 0, formfiller: 0, pdfinfo: 0,
+           lastUpdated: null };
+}
+
+function trackUsage(key) {
+  const data = getUsage();
+  data[key] = (data[key] || 0) + 1;
+  data.lastUpdated = new Date().toISOString();
+  localStorage.setItem(USAGE_KEY, JSON.stringify(data));
+}
+
 /* ══════════════════════════════════════════════════════════════════════════════
    1. MERGE
 ══════════════════════════════════════════════════════════════════════════════ */
@@ -279,6 +305,7 @@ function requirePDFLib(resultEl) {
     const filename = document.getElementById('merge-filename').value.trim() || 'merged.pdf';
     const large    = orderedFiles.some(f => f.size > 5 * 1024 * 1024);
     aborted = false;
+    trackUsage('merge');
 
     if (large) {
       showLoadingCancelable(result, 'Merging PDFs…', () => { aborted = true; result.innerHTML = ''; });
@@ -378,6 +405,7 @@ function requirePDFLib(resultEl) {
     if (!items.length) { showError(result, 'Add at least one range'); return; }
 
     aborted = false;
+    trackUsage('split');
     const large = file.size > 5 * 1024 * 1024;
     if (large) {
       showLoadingCancelable(result, `Building ${items.length} PDF${items.length > 1 ? 's' : ''}…`, () => {
@@ -518,6 +546,7 @@ function requirePDFLib(resultEl) {
     const filename  = document.getElementById('rotate-filename').value.trim() || 'rotated.pdf';
     const large     = file.size > 5 * 1024 * 1024;
     aborted = false;
+    trackUsage('rotate');
 
     if (large) {
       showLoadingCancelable(result, isReset ? 'Removing rotation…' : 'Rotating pages…', () => { aborted = true; result.innerHTML = ''; });
@@ -638,6 +667,7 @@ function requirePDFLib(resultEl) {
     const filename = document.getElementById('pn-filename').value.trim() || 'numbered.pdf';
     const large    = file.size > 5 * 1024 * 1024;
     aborted = false;
+    trackUsage('pagenumbers');
 
     if (large) {
       showLoadingCancelable(result, 'Adding page numbers…', () => { aborted = true; result.innerHTML = ''; });
@@ -733,6 +763,7 @@ function requirePDFLib(resultEl) {
     const filename   = document.getElementById('hf-filename').value.trim() || 'headerfooter.pdf';
     const large      = file.size > 5 * 1024 * 1024;
     aborted = false;
+    trackUsage('headerfooter');
 
     if (large) {
       showLoadingCancelable(result, 'Applying header/footer…', () => { aborted = true; result.innerHTML = ''; });
@@ -876,6 +907,7 @@ function requirePDFLib(resultEl) {
     const filename = document.getElementById('wm-filename').value.trim() || 'watermarked.pdf';
     const large    = file.size > 5 * 1024 * 1024;
     aborted = false;
+    trackUsage('watermark');
 
     if (large) {
       showLoadingCancelable(result, 'Applying watermark…', () => { aborted = true; result.innerHTML = ''; });
@@ -958,6 +990,7 @@ function requirePDFLib(resultEl) {
     const filename  = document.getElementById('compress-filename').value.trim() || 'compressed.pdf';
     const large     = file.size > 5 * 1024 * 1024;
     aborted = false;
+    trackUsage('compress');
 
     if (large) {
       showLoadingCancelable(result, 'Compressing…', () => { aborted = true; result.innerHTML = ''; });
@@ -1292,6 +1325,7 @@ function requirePDFLib(resultEl) {
 
     const filename = document.getElementById('redact-filename').value.trim() || 'redacted.pdf';
     aborted = false;
+    trackUsage('redact');
 
     showLoadingCancelable(result, `Applying redactions to page 1 of ${pageCount}…`, () => {
       aborted = true; result.innerHTML = '';
@@ -1492,6 +1526,7 @@ function requirePDFLib(resultEl) {
     if (!rawBytes) { showError(result, 'Upload a PDF first'); return; }
 
     const filename = document.getElementById('form-filename').value.trim() || 'filled.pdf';
+    trackUsage('formfiller');
     showLoading(result, 'Filling form…');
 
     try {
@@ -1524,6 +1559,104 @@ function requirePDFLib(resultEl) {
     } catch (e) {
       showError(result, e.message || 'Failed to fill form');
     }
+  });
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   USAGE STATS PAGE
+══════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  const TOOL_LABELS = {
+    merge:        'Merge PDFs',
+    split:        'Split PDF',
+    rotate:       'Rotate Pages',
+    pagenumbers:  'Page Numbers',
+    headerfooter: 'Headers & Footers',
+    watermark:    'Watermark',
+    compress:     'Compress PDF',
+    redact:       'Redact',
+    formfiller:   'Form Filler',
+    pdfinfo:      'PDF Info',
+  };
+
+  function renderStats() {
+    const body = document.getElementById('stats-body');
+    if (!body) return;
+    const data   = getUsage();
+    const counts = Object.entries(TOOL_LABELS).map(([key, label]) => ({ key, label, count: data[key] || 0 }));
+    const total  = counts.reduce((s, t) => s + t.count, 0);
+    const max    = Math.max(...counts.map(t => t.count), 1);
+
+    if (total === 0) {
+      body.innerHTML = '<div class="stats-empty">No tools used yet — get started!</div>';
+      return;
+    }
+
+    const mostUsed = counts.reduce((a, b) => a.count >= b.count ? a : b);
+    const lastUsed = data.lastUpdated ? new Date(data.lastUpdated).toLocaleString() : '—';
+
+    const chartHtml = `<div class="stats-chart">${
+      counts.map(t => `<div class="stats-bar-row">
+        <span class="stats-bar-label">${t.label}</span>
+        <div class="stats-bar-track"><div class="stats-bar-fill" data-width="${(t.count / max * 100).toFixed(1)}"></div></div>
+        <span class="stats-bar-count">${t.count}</span>
+      </div>`).join('')
+    }</div>`;
+
+    const summaryHtml = `<div class="stats-summary">
+      <div class="stats-summary-item">Total actions: <strong>${total}</strong></div>
+      <div class="stats-summary-item">Most used: <strong>${mostUsed.label} (${mostUsed.count} time${mostUsed.count !== 1 ? 's' : ''})</strong></div>
+      <div class="stats-summary-item">Last used: <strong>${lastUsed}</strong></div>
+    </div>`;
+
+    body.innerHTML = chartHtml + summaryHtml +
+      `<div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-ghost btn-sm" id="stats-reset-btn"
+          style="color:var(--text-tertiary);border-color:var(--border-color)">Reset stats</button>
+        <span id="stats-reset-msg" style="display:none;font-size:12px;color:var(--text-tertiary)">Stats reset ✓</span>
+      </div>`;
+
+    // Animate bars in
+    requestAnimationFrame(() => setTimeout(() => {
+      body.querySelectorAll('.stats-bar-fill').forEach(bar => { bar.style.width = bar.dataset.width + '%'; });
+    }, 50));
+
+    document.getElementById('stats-reset-btn').addEventListener('click', () => {
+      localStorage.removeItem(USAGE_KEY);
+      const msg = document.getElementById('stats-reset-msg');
+      const btn = document.getElementById('stats-reset-btn');
+      if (msg) msg.style.display = '';
+      if (btn) btn.disabled = true;
+      setTimeout(() => { renderStats(); }, 2000);
+    });
+  }
+
+  document.querySelectorAll('.nav-item[data-tool="stats"]').forEach(btn => {
+    btn.addEventListener('click', () => setTimeout(renderStats, 160));
+  });
+})();
+
+/* ── Dark mode toggle ────────────────────────────────────────────────────────── */
+(function () {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+
+  function applyTheme(dark) {
+    if (dark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      btn.textContent = '☀️ Light mode';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      btn.textContent = '🌙 Dark mode';
+    }
+    localStorage.setItem('pagehub-theme', dark ? 'dark' : 'light');
+  }
+
+  btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark'
+    ? '☀️ Light mode' : '🌙 Dark mode';
+
+  btn.addEventListener('click', () => {
+    applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
   });
 })();
 
@@ -1599,6 +1732,7 @@ function requirePDFLib(resultEl) {
         </tr>`;
       }).join('');
 
+      trackUsage('pdfinfo');
       status.innerHTML = '';
       results.style.display = '';
     } catch (e) {
