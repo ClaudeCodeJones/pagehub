@@ -2,17 +2,12 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const archiver = require('archiver');
 const { PDFDocument, rgb, StandardFonts, degrees } = require('pdf-lib');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Ensure tmp directory exists
-const TMP_DIR = path.join(__dirname, 'tmp');
-if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
 // Session store for form filling
 const formSessions = new Map();
@@ -475,4 +470,9 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`PageHub running on http://localhost:${PORT}`));
+// Local dev: start server only when run directly (not when imported by Vercel)
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`PageHub running on http://localhost:${PORT}`));
+}
+
+module.exports = app;
