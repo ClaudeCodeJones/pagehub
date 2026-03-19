@@ -11,11 +11,13 @@
   <style>
     /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; background: #1E1B4B; margin: 0; padding: 0; }
     body {
       font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #F8FAFC;
+      background: #1E1B4B;
       color: #0F172A;
+      margin: 0;
+      padding: 0;
       -webkit-font-smoothing: antialiased;
     }
     a { text-decoration: none; color: inherit; }
@@ -75,7 +77,8 @@
 
     /* ── HERO ── */
     .hero {
-      min-height: 100vh;
+      min-height: auto;
+      padding: 80px 2rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -97,12 +100,12 @@
 
     .hero-inner {
       max-width: 760px;
-      padding: 0 24px 20px;
+      padding: 0;
     }
 
     .hero-eyebrow {
       display: inline-block;
-      margin-bottom: 28px;
+      margin-bottom: 1rem;
       padding: 10px 32px;
       border-radius: 100px;
       border: 1px solid rgba(129, 140, 248, 0.3);
@@ -121,14 +124,14 @@
       color: #fff;
       line-height: 1.07;
       letter-spacing: -0.03em;
-      margin-bottom: 22px;
+      margin-bottom: 0.75rem;
     }
 
     .hero-sub {
       font-size: 20px;
       color: #818CF8;
       line-height: 1.55;
-      margin-bottom: 40px;
+      margin-bottom: 1.5rem;
       max-width: 520px;
       margin-left: auto;
       margin-right: auto;
@@ -306,7 +309,7 @@
   <section class="hero">
     <div class="hero-inner">
       <img src="/logos/pagehub_logo_white.webp" alt="PageHub"
-        style="height: 120px; width: auto; margin-bottom: 2.5rem; display: block; margin-left: auto; margin-right: auto;">
+        style="height: 120px; width: auto; margin-bottom: 1.5rem; display: block; margin-left: auto; margin-right: auto;">
       <span class="hero-eyebrow">PDF Toolkit · 10 Tools</span>
       <h1 class="hero-headline">
         Every PDF<br />tool <span style="color:#F59E0B">you</span> need.
@@ -320,32 +323,25 @@
 
   <!-- ── TOOLS BAND ────────────────────────────────────────────────────────── -->
   <div class="tools-band">
-    <span class="tools-band-item">Merge PDFs</span>
-    <span class="tools-band-item">Split PDF</span>
-    <span class="tools-band-item">Rotate Pages</span>
-    <span class="tools-band-item">Page Numbers</span>
-    <span class="tools-band-item">Headers &amp; Footers</span>
-    <span class="tools-band-item">Watermark</span>
-    <span class="tools-band-item">Compress PDF</span>
-    <span class="tools-band-item">Redact</span>
-    <span class="tools-band-item">Form Filler</span>
-    <span class="tools-band-item">PDF Info</span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#merge">Merge PDFs</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#split">Split PDF</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#rotate">Rotate Pages</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#pagenumbers">Page Numbers</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#headerfooter">Headers &amp; Footers</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#watermark">Watermark</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#compress">Compress PDF</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#redact">Redact</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#formfiller">Form Filler</a></span>
+    <span class="tools-band-item"><a class="tools-band-link" href="/app#pdfinfo">PDF Info</a></span>
   </div>
 
   <!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
   <footer class="footer">
-    <img src="/logos/pagehub_logo_white.webp" alt="PageHub"
+    <img src="/logos/mwgroup_logo.webp" alt="MW Group"
       style="height: 24px; width: auto; opacity: 0.85; display: inline-block; vertical-align: middle; margin-right: 8px;">
     &mdash; Built for internal use
   </footer>
 
-  <!-- ── MOBILE BLOCK ─────────────────────────────────────────────────────── -->
-  <div class="mobile-block">
-    <img src="/logos/pagehub_logo_white.webp" alt="PageHub">
-    <h2>Desktop only</h2>
-    <p>PageHub is designed for desktop use.<br>
-    Please open on a computer or larger screen.</p>
-  </div>
 
 </body>
 </html>

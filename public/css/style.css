@@ -166,6 +166,14 @@ ul { list-style: none; }
   color: rgba(165,180,252,0.4);
 }
 
+.nav-group-note {
+  display: block;
+  padding: 6px 18px 4px;
+  font-size: 11px;
+  color: rgba(165,180,252,0.3);
+  letter-spacing: 0.1px;
+}
+
 .nav-item {
   display: flex;
   align-items: center;

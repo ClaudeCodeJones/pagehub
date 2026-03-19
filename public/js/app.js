@@ -217,6 +217,18 @@ function parsePageRange(str, total) {
   return [...indices].sort((a, b) => a - b);
 }
 
+/* ── Direct tool navigation ─────────────────────────────────────────────────── */
+function navigateTo(tool) {
+  const next    = document.getElementById('view-' + tool);
+  const current = document.querySelector('.tool-view.active');
+  if (!next || current === next) return;
+  document.querySelectorAll('.nav-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.tool === tool);
+  });
+  if (current) current.classList.remove('active');
+  next.classList.add('active');
+}
+
 /* ── requirePDFLib guard ────────────────────────────────────────────────────── */
 function requirePDFLib(resultEl) {
   if (!PDFDocument) {
@@ -1634,6 +1646,20 @@ function trackUsage(key) {
   document.querySelectorAll('.nav-item[data-tool="stats"]').forEach(btn => {
     btn.addEventListener('click', () => setTimeout(renderStats, 160));
   });
+})();
+
+/* ── Hash-based navigation (from landing page tool links) ───────────────────── */
+(function () {
+  const hash = window.location.hash.replace('#', '');
+  if (hash) {
+    const tabMap = {
+      merge: 'merge', split: 'split', rotate: 'rotate',
+      pagenumbers: 'pagenumbers', headerfooter: 'headerfooter',
+      watermark: 'watermark', compress: 'compress',
+      redact: 'redact', formfiller: 'formfiller', pdfinfo: 'pdfinfo'
+    };
+    if (tabMap[hash]) navigateTo(tabMap[hash]);
+  }
 })();
 
 /* ── Dark mode toggle ────────────────────────────────────────────────────────── */
