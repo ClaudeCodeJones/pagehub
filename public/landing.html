@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PageHub — PDF Toolkit</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F8FAFC;
+      color: #0F172A;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── NAVBAR ── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 64px;
+      background: #1E1B4B;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 48px;
+      border-bottom: 1px solid rgba(129, 140, 248, 0.12);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-brand img {
+      height: 30px;
+      display: block;
+    }
+
+    .nav-brand-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+
+    .nav-launch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 22px;
+      background: #F59E0B;
+      color: #1E1B4B;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 8px;
+      transition: background 140ms ease, box-shadow 140ms ease, transform 60ms ease;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+    .nav-launch:hover {
+      background: #FBBF24;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
+    }
+    .nav-launch:active { transform: scale(0.975); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+
+      background-color: #1E1B4B;
+      background-image:
+        /* Indigo glow — upper left */
+        radial-gradient(ellipse at 25% 15%, rgba(79, 70, 229, 0.5) 0%, transparent 55%),
+        /* Lavender hint — lower right */
+        radial-gradient(ellipse at 80% 85%, rgba(129, 140, 248, 0.18) 0%, transparent 50%),
+        /* Dot grid */
+        radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1px);
+      background-size:
+        100% 100%,
+        100% 100%,
+        28px 28px;
+    }
+
+    .hero-inner {
+      max-width: 760px;
+      padding: 0 24px 80px;
+    }
+
+    .hero-eyebrow {
+      display: inline-block;
+      margin-bottom: 28px;
+      padding: 5px 16px;
+      border-radius: 100px;
+      border: 1px solid rgba(129, 140, 248, 0.3);
+      background: rgba(129, 140, 248, 0.1);
+      color: #818CF8;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .hero-headline {
+      font-family: 'Syne', sans-serif;
+      font-size: 64px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.07;
+      letter-spacing: -0.03em;
+      margin-bottom: 22px;
+    }
+
+    .hero-sub {
+      font-size: 20px;
+      color: #818CF8;
+      line-height: 1.55;
+      margin-bottom: 40px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 44px;
+      background: #F59E0B;
+      color: #1E1B4B;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 100px;
+      transition: background 140ms ease, box-shadow 140ms ease, transform 100ms ease;
+      box-shadow: 0 4px 24px rgba(245, 158, 11, 0.38);
+      letter-spacing: -0.1px;
+    }
+    .hero-cta:hover {
+      background: #FBBF24;
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.50);
+      transform: translateY(-2px);
+    }
+    .hero-cta:active {
+      transform: translateY(0) scale(0.975);
+    }
+
+    /* ── TOOLS ── */
+    .tools {
+      padding: 88px 48px 80px;
+      background: #F8FAFC;
+    }
+
+    .tools-heading {
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #1E1B4B;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
+    }
+
+    .tools-sub {
+      text-align: center;
+      font-size: 16px;
+      color: #64748B;
+      margin-bottom: 52px;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .tool-card {
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 22px 18px 18px;
+      transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+      cursor: default;
+    }
+    .tool-card:hover {
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.09), 0 2px 6px rgba(0, 0, 0, 0.04);
+      transform: translateY(-2px);
+      border-color: rgba(129, 140, 248, 0.4);
+    }
+
+    .tool-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .tool-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 5px;
+      letter-spacing: -0.1px;
+    }
+
+    .tool-desc {
+      font-size: 12.5px;
+      color: #64748B;
+      line-height: 1.5;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      padding: 28px 24px;
+      background: #1E1B4B;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 13px;
+      letter-spacing: 0.1px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .tools-grid { grid-template-columns: repeat(3, 1fr); }
+      .tools { padding: 72px 28px 64px; }
+    }
+
+    @media (max-width: 680px) {
+      .nav { padding: 0 20px; }
+      .nav-brand-name { font-size: 16px; }
+      .nav-launch { padding: 8px 16px; font-size: 13px; }
+      .hero-headline { font-size: 38px; letter-spacing: -0.02em; }
+      .hero-sub { font-size: 17px; }
+      .hero-cta { font-size: 16px; padding: 15px 32px; }
+      .tools-heading { font-size: 28px; }
+      .tools-grid { grid-template-columns: repeat(2, 1fr); }
+      .tools { padding: 60px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── HERO ─────────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-inner">
+      <img src="/logos/pagehub_logo_white.webp" alt="PageHub"
+        style="height: 120px; width: auto; margin-bottom: 2.5rem; display: block; margin-left: auto; margin-right: auto;">
+      <span class="hero-eyebrow">PDF Toolkit · 10 Tools</span>
+      <h1 class="hero-headline">
+        Every PDF tool you need.<br />Nothing you don't.
+      </h1>
+      <p class="hero-sub">
+        Merge, split, sign, redact, convert and more — all in one place, all in your browser.
+      </p>
+      <a href="/app" class="hero-cta">Launch PageHub →</a>
+    </div>
+  </section>
+
+  <!-- ── TOOLS GRID ────────────────────────────────────────────────────────── -->
+  <section class="tools">
+    <h2 class="tools-heading">10 tools. Zero friction.</h2>
+    <p class="tools-sub">Everything you need to work with PDFs, nothing you don't.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <span class="tool-icon">🔀</span>
+        <div class="tool-name">Merge PDFs</div>
+        <div class="tool-desc">Combine multiple PDFs into one</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">✂️</span>
+        <div class="tool-name">Split PDF</div>
+        <div class="tool-desc">Extract pages or ranges as a zip</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔄</span>
+        <div class="tool-name">Rotate Pages</div>
+        <div class="tool-desc">Fix orientation on any page</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">#️⃣</span>
+        <div class="tool-name">Page Numbers</div>
+        <div class="tool-desc">Add numbers in any position</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">📄</span>
+        <div class="tool-name">Headers &amp; Footers</div>
+        <div class="tool-desc">Stamp text on every page</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🗜️</span>
+        <div class="tool-name">Compress PDF</div>
+        <div class="tool-desc">Reduce file size instantly</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">💧</span>
+        <div class="tool-name">Watermark</div>
+        <div class="tool-desc">Brand or protect your documents</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">⬛</span>
+        <div class="tool-name">Redact</div>
+        <div class="tool-desc">Black out sensitive information</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">📋</span>
+        <div class="tool-name">Form Filler</div>
+        <div class="tool-desc">Fill interactive PDF forms</div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🔍</span>
+        <div class="tool-name">PDF Info</div>
+        <div class="tool-desc">Inspect metadata and dimensions</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <img src="/logos/pagehub_logo_white.webp" alt="PageHub"
+      style="height: 24px; width: auto; opacity: 0.85; display: inline-block; vertical-align: middle; margin-right: 8px;">
+    &mdash; Built for internal use
+  </footer>
+
+</body>
+</html>

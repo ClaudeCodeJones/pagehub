@@ -1,26 +1,140 @@
-/* ── Navigation ────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   PageHub — app.js  (fully client-side, no server API calls)
+══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── CDN globals (null-safe destructure) ────────────────────────────────────── */
+let PDFDocument, rgb, StandardFonts, degrees;
+if (typeof PDFLib !== 'undefined') {
+  ({ PDFDocument, rgb, StandardFonts, degrees } = PDFLib);
+} else {
+  console.error('pdf-lib failed to load from CDN');
+}
+
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────────── */
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
+    const next    = document.getElementById('view-' + btn.dataset.tool);
+    const current = document.querySelector('.tool-view.active');
+    if (!next || current === next) return;
+
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tool-view').forEach(v => v.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('view-' + btn.dataset.tool).classList.add('active');
+
+    if (current) {
+      current.classList.add('view-exit');
+      setTimeout(() => {
+        current.classList.remove('active', 'view-exit');
+        next.classList.add('active');
+        next.closest('.main')?.scrollTo({ top: 0, behavior: 'instant' });
+      }, 140);
+    } else {
+      next.classList.add('active');
+    }
   });
 });
 
-/* ── Helpers ───────────────────────────────────────────────────────────────── */
+/* ── Colour preset buttons ──────────────────────────────────────────────────── */
+document.querySelectorAll('.color-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.for);
+    if (input) {
+      input.value = btn.dataset.color;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    btn.closest('.color-row').querySelectorAll('.color-preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════════════════════════════ */
+
 function fmt(bytes) {
-  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024)    return bytes + ' B';
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return rgb(r, g, b);
+}
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/* Render PDF page 1 to a <canvas> using pdfjs CDN.
+   Returns true on success, false if pdfjs unavailable or render fails. */
+async function renderPageToCanvas(arrayBuffer, canvasEl, maxWidth = 280) {
+  if (typeof pdfjsLib === 'undefined') return false;
+  try {
+    const pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const page   = await pdfDoc.getPage(1);
+    const vp0    = page.getViewport({ scale: 1 });
+    const scale  = maxWidth / vp0.width;
+    const vp     = page.getViewport({ scale });
+    canvasEl.width  = Math.floor(vp.width);
+    canvasEl.height = Math.floor(vp.height);
+    await page.render({ canvasContext: canvasEl.getContext('2d'), viewport: vp }).promise;
+    return true;
+  } catch (e) {
+    console.warn('Preview render failed:', e.message);
+    return false;
+  }
+}
+
+/* Update drop zone appearance once a file is selected — gives clear feedback */
+function setDropZoneFile(dropEl, file) {
+  dropEl.classList.add('has-file');
+  const icon = dropEl.querySelector('.drop-icon');
+  const p    = dropEl.querySelector('p');
+  const hint = dropEl.querySelector('.drop-hint');
+  if (icon) icon.textContent = '📄';
+  if (p)    p.innerHTML = `<strong style="color:var(--text-primary)">${file.name}</strong>`;
+  if (hint) hint.textContent = fmt(file.size) + ' · click or drop to replace';
+}
+
+/* Reset a drop zone back to empty state */
+function resetDropZone(dropEl, iconText, mainHtml, hintText) {
+  dropEl.classList.remove('has-file', 'dragover');
+  const icon = dropEl.querySelector('.drop-icon');
+  const p    = dropEl.querySelector('p');
+  const hint = dropEl.querySelector('.drop-hint');
+  if (icon) icon.textContent = iconText;
+  if (p)    p.innerHTML = mainHtml;
+  if (hint) hint.textContent = hintText;
 }
 
 function showLoading(el, msg = 'Processing…') {
   el.innerHTML = `<div class="loading-card"><div class="spinner"></div>${msg}</div>`;
 }
 
-function showResult(el, title, sub, blob, filename) {
-  const url = URL.createObjectURL(blob);
+function showLoadingCancelable(el, msg, onCancel) {
+  el.innerHTML = `<div class="loading-card">
+    <div class="spinner"></div>
+    <span style="flex:1">${msg}</span>
+    <button class="btn btn-ghost btn-sm cancel-btn">Cancel</button>
+  </div>`;
+  el.querySelector('.cancel-btn').addEventListener('click', onCancel);
+}
+
+function showResult(el, title, sub, bytes, filename, mimeType = 'application/pdf') {
+  const blob = new Blob([bytes], { type: mimeType });
+  const url  = URL.createObjectURL(blob);
   el.innerHTML = `<div class="result-card">
     <div class="result-icon">✅</div>
     <div class="result-text">
@@ -35,58 +149,90 @@ function showError(el, msg) {
   el.innerHTML = `<div class="error-card">⚠ ${msg}</div>`;
 }
 
-async function handleResponse(res, el, filename, title) {
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    showError(el, err.error || 'Server error');
-    return;
-  }
-  const blob = await res.blob();
-  showResult(el, title || 'Done!', `${fmt(blob.size)} · ${filename}`, blob, filename);
-}
-
-/* ── Drop zone factory ─────────────────────────────────────────────────────── */
+/* ── Drop-zone factory ──────────────────────────────────────────────────────── */
+/*  Key fix: entire drop zone is clickable — no reliance on <label for="...">.
+    File inputs use style="display:none" (not `hidden`) for reliable click().  */
 function setupDropZone(dropEl, inputEl, callback, multiple = false) {
-  dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('dragover'); });
-  dropEl.addEventListener('dragleave', () => dropEl.classList.remove('dragover'));
+  dropEl.addEventListener('click', () => inputEl.click());
+
+  dropEl.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropEl.classList.add('dragover');
+  });
+  dropEl.addEventListener('dragleave', e => {
+    if (!dropEl.contains(e.relatedTarget)) dropEl.classList.remove('dragover');
+  });
   dropEl.addEventListener('drop', e => {
     e.preventDefault();
     dropEl.classList.remove('dragover');
-    const files = [...e.dataTransfer.files];
+    const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
     if (files.length) callback(multiple ? files : [files[0]]);
   });
   inputEl.addEventListener('change', () => {
-    if (inputEl.files.length) callback(multiple ? [...inputEl.files] : [inputEl.files[0]]);
+    if (inputEl.files.length) {
+      callback(multiple ? [...inputEl.files] : [inputEl.files[0]]);
+      inputEl.value = ''; // allow re-selecting same file
+    }
   });
 }
 
-/* ── Drag-to-reorder list ──────────────────────────────────────────────────── */
+/* ── Drag-to-reorder ────────────────────────────────────────────────────────── */
 function makeSortable(list) {
   let dragged = null;
   list.addEventListener('dragstart', e => {
     dragged = e.target.closest('.file-item');
-    setTimeout(() => dragged && dragged.classList.add('dragging'), 0);
+    setTimeout(() => dragged?.classList.add('dragging'), 0);
   });
-  list.addEventListener('dragend', () => dragged && dragged.classList.remove('dragging'));
+  list.addEventListener('dragend', () => dragged?.classList.remove('dragging'));
   list.addEventListener('dragover', e => {
     e.preventDefault();
     const over = e.target.closest('.file-item');
     if (over && over !== dragged) {
-      const rect = over.getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
+      const mid = over.getBoundingClientRect().top + over.getBoundingClientRect().height / 2;
       list.insertBefore(dragged, e.clientY < mid ? over : over.nextSibling);
     }
   });
+}
+
+/* ── Page range parser ──────────────────────────────────────────────────────── */
+function parsePageRange(str, total) {
+  const indices = new Set();
+  str.split(',').forEach(part => {
+    part = part.trim();
+    const m = part.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+    if (m) {
+      const a = parseInt(m[1]), b = parseInt(m[2]);
+      for (let i = Math.max(1, a); i <= Math.min(total, b); i++) indices.add(i - 1);
+    } else {
+      const n = parseInt(part);
+      if (!isNaN(n) && n >= 1 && n <= total) indices.add(n - 1);
+    }
+  });
+  return [...indices].sort((a, b) => a - b);
+}
+
+/* ── requirePDFLib guard ────────────────────────────────────────────────────── */
+function requirePDFLib(resultEl) {
+  if (!PDFDocument) {
+    showError(resultEl, 'PDF library not loaded. Check your internet connection and refresh the page.');
+    return false;
+  }
+  return true;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    1. MERGE
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  const list = document.getElementById('merge-list');
-  const btn = document.getElementById('merge-btn');
-  const result = document.getElementById('merge-result');
+  const dropEl   = document.getElementById('merge-drop');
+  const inputEl  = document.getElementById('merge-input');
+  const list     = document.getElementById('merge-list');
+  const actions  = document.getElementById('merge-actions');
+  const btn      = document.getElementById('merge-btn');
+  const result   = document.getElementById('merge-result');
+  const clearBtn = document.getElementById('merge-clear');
   let files = [];
+  let aborted = false;
 
   makeSortable(list);
 
@@ -94,16 +240,27 @@ function makeSortable(list) {
     list.innerHTML = '';
     files.forEach((f, i) => {
       const li = document.createElement('li');
-      li.className = 'file-item';
-      li.draggable = true;
+      li.className  = 'file-item';
+      li.draggable  = true;
       li.dataset.idx = i;
-      li.innerHTML = `<span class="drag-handle">⠿</span>
+      li.innerHTML  = `<span class="drag-handle">⠿</span>
         <span class="file-name">${f.name}</span>
         <span class="file-size">${fmt(f.size)}</span>
         <button class="remove-btn" data-i="${i}">×</button>`;
       list.appendChild(li);
     });
-    btn.disabled = files.length < 2;
+    actions.style.display = files.length >= 2 ? '' : 'none';
+    if (clearBtn) clearBtn.style.display = files.length ? '' : 'none';
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      files = [];
+      aborted = true;
+      result.innerHTML = '';
+      resetDropZone(dropEl, '⊕', 'Drop PDF files here or <span class="link-label">browse</span>', 'Accepts multiple files — drag to reorder');
+      renderList();
+    });
   }
 
   list.addEventListener('click', e => {
@@ -111,455 +268,1187 @@ function makeSortable(list) {
     if (rb) { files.splice(+rb.dataset.i, 1); renderList(); }
   });
 
-  setupDropZone(
-    document.getElementById('merge-drop'),
-    document.getElementById('merge-input'),
-    newFiles => { files.push(...newFiles); renderList(); },
-    true
-  );
+  setupDropZone(dropEl, inputEl, newFiles => {
+    files.push(...newFiles);
+    renderList();
+  }, true);
 
   btn.addEventListener('click', async () => {
-    // Read order from DOM
+    if (!requirePDFLib(result)) return;
     const orderedFiles = [...list.querySelectorAll('.file-item')].map(li => files[+li.dataset.idx]);
-    const fd = new FormData();
-    orderedFiles.forEach(f => fd.append('files', f));
-    showLoading(result);
-    const res = await fetch('/api/merge', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'merged.pdf', 'PDFs merged successfully!');
+    const filename = document.getElementById('merge-filename').value.trim() || 'merged.pdf';
+    const large    = orderedFiles.some(f => f.size > 5 * 1024 * 1024);
+    aborted = false;
+
+    if (large) {
+      showLoadingCancelable(result, 'Merging PDFs…', () => { aborted = true; result.innerHTML = ''; });
+    } else {
+      showLoading(result, 'Merging PDFs…');
+    }
+
+    try {
+      const merged = await PDFDocument.create();
+      for (const f of orderedFiles) {
+        if (aborted) return;
+        const buf  = await readFile(f);
+        const doc  = await PDFDocument.load(buf);
+        const pages = await merged.copyPages(doc, doc.getPageIndices());
+        pages.forEach(p => merged.addPage(p));
+      }
+      if (aborted) return;
+      const bytes = await merged.save();
+      if (aborted) return;
+      showResult(result, 'PDFs merged!', `${fmt(bytes.length)} · ${filename}`, bytes, filename);
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to merge PDFs');
+    }
   });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   2. SPLIT
+   2. SPLIT  — multi-range, individual PDF downloads (no zip)
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
+  const dropEl     = document.getElementById('split-drop');
+  const inputEl    = document.getElementById('split-input');
+  const opts       = document.getElementById('split-options');
+  const rangesList = document.getElementById('split-ranges-list');
+  const result     = document.getElementById('split-result');
+  const clearBtn   = document.getElementById('split-clear');
   let file = null;
-  const opts = document.getElementById('split-options');
-  const rangeRow = document.getElementById('split-range-row');
-  const result = document.getElementById('split-result');
+  let srcPageCount = 0;
+  let aborted = false;
 
-  setupDropZone(
-    document.getElementById('split-drop'),
-    document.getElementById('split-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
-
-  document.querySelectorAll('input[name="split-mode"]').forEach(r => {
-    r.addEventListener('change', () => {
-      rangeRow.style.display = r.value === 'range' ? '' : 'none';
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      file = null; srcPageCount = 0; aborted = true;
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      rangesList.innerHTML = '';
+      resetDropZone(dropEl, '⊖', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
     });
+  }
+
+  setupDropZone(dropEl, inputEl, async files => {
+    file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    showLoading(result, 'Reading…');
+    try {
+      const buf = await readFile(file);
+      const doc = await PDFDocument.load(buf);
+      srcPageCount = doc.getPageCount();
+      result.innerHTML = '';
+      opts.style.display = '';
+      if (!rangesList.children.length) {
+        addRange('1', 'part-1.pdf');
+        addRange('2-' + srcPageCount, 'part-2.pdf');
+      }
+    } catch (e) {
+      showError(result, e.message || 'Could not read PDF');
+    }
   });
+
+  function addRange(defaultPages = '', defaultName = '') {
+    const idx  = rangesList.children.length + 1;
+    const item = document.createElement('div');
+    item.className = 'split-range-item';
+    item.innerHTML = `
+      <div class="split-range-field">
+        <label>Pages</label>
+        <input type="text" class="text-input range-pages" value="${defaultPages}" placeholder="e.g. 1-3, 5" />
+      </div>
+      <div class="split-range-field">
+        <label>Output filename</label>
+        <input type="text" class="text-input wide range-filename" value="${defaultName || 'part-' + idx + '.pdf'}" />
+      </div>
+      <button class="btn-danger-ghost" title="Remove">×</button>`;
+    item.querySelector('.btn-danger-ghost').addEventListener('click', () => item.remove());
+    rangesList.appendChild(item);
+  }
+
+  document.getElementById('split-add-range').addEventListener('click', () => addRange());
 
   document.getElementById('split-btn').addEventListener('click', async () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('mode', document.querySelector('input[name="split-mode"]:checked').value);
-    fd.append('range', document.getElementById('split-range').value);
-    showLoading(result);
-    const res = await fetch('/api/split', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'split.zip', 'PDF split into pages!');
+    if (!requirePDFLib(result)) return;
+    if (!file) { showError(result, 'Upload a PDF first'); return; }
+
+    const items = [...rangesList.querySelectorAll('.split-range-item')];
+    if (!items.length) { showError(result, 'Add at least one range'); return; }
+
+    aborted = false;
+    const large = file.size > 5 * 1024 * 1024;
+    if (large) {
+      showLoadingCancelable(result, `Building ${items.length} PDF${items.length > 1 ? 's' : ''}…`, () => {
+        aborted = true; result.innerHTML = '';
+      });
+    } else {
+      showLoading(result, `Building ${items.length} PDF${items.length > 1 ? 's' : ''}…`);
+    }
+
+    try {
+      const buf = await readFile(file);
+      if (aborted) return;
+      const src = await PDFDocument.load(buf);
+      const pc  = src.getPageCount();
+
+      const downloads = [];
+      for (const item of items) {
+        if (aborted) return;
+        const pagesStr = item.querySelector('.range-pages').value.trim();
+        const filename = item.querySelector('.range-filename').value.trim() || 'output.pdf';
+        const indices  = pagesStr ? parsePageRange(pagesStr, pc) : Array.from({ length: pc }, (_, i) => i);
+        if (!indices.length) continue;
+
+        const out   = await PDFDocument.create();
+        const pages = await out.copyPages(src, indices);
+        pages.forEach(p => out.addPage(p));
+        const bytes = await out.save();
+        downloads.push({ bytes, filename, pages: indices.length });
+      }
+
+      if (aborted || !downloads.length) {
+        if (!aborted) showError(result, 'No valid page ranges');
+        return;
+      }
+
+      for (let i = 0; i < downloads.length; i++) {
+        const { bytes, filename } = downloads[i];
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+        const a   = Object.assign(document.createElement('a'), { href: url, download: filename });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        if (i < downloads.length - 1) await new Promise(r => setTimeout(r, 200));
+      }
+
+      result.innerHTML = `<div class="result-list">
+        ${downloads.map(d => `
+          <div class="result-list-item">
+            <span>✅</span>
+            <span class="result-name">${d.filename}</span>
+            <span class="result-pages">${d.pages} page${d.pages !== 1 ? 's' : ''} · ${fmt(d.bytes.length)}</span>
+          </div>`).join('')}
+      </div>`;
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to split PDF');
+    }
   });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   3. ROTATE
+   3. ROTATE  — fixed file selection + odd/even + live canvas preview
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  let file = null;
-  const opts = document.getElementById('rotate-options');
+  const dropEl   = document.getElementById('rotate-drop');
+  const inputEl  = document.getElementById('rotate-input');
+  const opts     = document.getElementById('rotate-options');
   const rangeRow = document.getElementById('rotate-range-row');
-  const result = document.getElementById('rotate-result');
+  const result   = document.getElementById('rotate-result');
+  const prevCanvas   = document.getElementById('rotate-preview-canvas');
+  const prevPh       = document.getElementById('rotate-preview-placeholder');
+  const prevLabel    = document.getElementById('rotate-preview-label');
+  const clearBtn     = document.getElementById('rotate-clear');
+  let file = null;
+  let aborted = false;
+  let rawBuf  = null; // keep ArrayBuffer for re-render
 
-  setupDropZone(
-    document.getElementById('rotate-drop'),
-    document.getElementById('rotate-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      file = null; rawBuf = null; aborted = true;
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      prevCanvas.style.display = 'none';
+      prevCanvas.style.transform = '';
+      if (prevPh) prevPh.style.display = '';
+      if (prevLabel) prevLabel.textContent = '';
+      resetDropZone(dropEl, '↻', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
+    });
+  }
 
+  /* ── Preview helpers ── */
+  function updateRotateAngleLabel() {
+    const val   = document.querySelector('input[name="rotate-angle"]:checked')?.value || '90';
+    const isReset = val === 'reset';
+    const angle   = isReset ? 0 : parseInt(val);
+    if (prevLabel)  prevLabel.textContent = isReset ? 'Page 1 · rotation removed (0°)' : `Page 1 · ${angle}° rotation applied`;
+    if (prevCanvas) prevCanvas.style.transform = `rotate(${angle}deg)`;
+  }
+
+  async function loadPreview(buf) {
+    const ok = await renderPageToCanvas(buf, prevCanvas, 260);
+    if (ok) {
+      prevCanvas.style.display = '';
+      if (prevPh) prevPh.style.display = 'none';
+      updateRotateAngleLabel();
+    }
+  }
+
+  /* ── Drop zone ── */
+  setupDropZone(dropEl, inputEl, async files => {
+    file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    opts.style.display = '';
+    rawBuf = await readFile(file).catch(() => null);
+    if (rawBuf) loadPreview(rawBuf);
+  });
+
+  /* ── Range visibility ── */
   document.querySelectorAll('input[name="rotate-target"]').forEach(r => {
     r.addEventListener('change', () => {
       rangeRow.style.display = r.value === 'custom' ? '' : 'none';
     });
   });
 
+  /* ── Angle change → update preview rotation ── */
+  document.querySelectorAll('input[name="rotate-angle"]').forEach(r => {
+    r.addEventListener('change', updateRotateAngleLabel);
+  });
+
+  /* ── Process ── */
   document.getElementById('rotate-btn').addEventListener('click', async () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('target', document.querySelector('input[name="rotate-target"]:checked').value);
-    fd.append('angle', document.querySelector('input[name="rotate-angle"]:checked').value);
-    fd.append('range', document.getElementById('rotate-range').value);
-    showLoading(result);
-    const res = await fetch('/api/rotate', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'rotated.pdf', 'Pages rotated!');
+    if (!requirePDFLib(result)) return;
+    if (!file) { showError(result, 'Please upload a PDF first'); return; }
+
+    const angleVal  = document.querySelector('input[name="rotate-angle"]:checked').value;
+    const isReset   = angleVal === 'reset';
+    const angleDeg  = isReset ? 0 : parseInt(angleVal);
+    const target    = document.querySelector('input[name="rotate-target"]:checked').value;
+    const filename  = document.getElementById('rotate-filename').value.trim() || 'rotated.pdf';
+    const large     = file.size > 5 * 1024 * 1024;
+    aborted = false;
+
+    if (large) {
+      showLoadingCancelable(result, isReset ? 'Removing rotation…' : 'Rotating pages…', () => { aborted = true; result.innerHTML = ''; });
+    } else {
+      showLoading(result, isReset ? 'Removing rotation…' : 'Rotating pages…');
+    }
+
+    try {
+      const buf = await readFile(file);
+      if (aborted) return;
+      const doc = await PDFDocument.load(buf);
+      if (aborted) return;
+      const pc  = doc.getPageCount();
+
+      let indices;
+      if      (target === 'all')    indices = Array.from({ length: pc }, (_, i) => i);
+      else if (target === 'odd')    indices = Array.from({ length: pc }, (_, i) => i).filter(i => i % 2 === 0);
+      else if (target === 'even')   indices = Array.from({ length: pc }, (_, i) => i).filter(i => i % 2 === 1);
+      else                          indices = parsePageRange(document.getElementById('rotate-range').value, pc);
+
+      indices.forEach(i => {
+        const page = doc.getPage(i);
+        if (isReset) {
+          // Absolute reset — force 0° regardless of current rotation
+          page.setRotation(degrees(0));
+        } else {
+          // Additive rotation
+          page.setRotation(degrees((page.getRotation().angle + angleDeg) % 360));
+        }
+      });
+
+      if (aborted) return;
+      const bytes = await doc.save();
+      if (aborted) return;
+      const resultLabel = isReset ? 'Rotation removed!' : 'Pages rotated!';
+      showResult(result, resultLabel, `${fmt(bytes.length)} · ${filename}`, bytes, filename);
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to rotate PDF');
+    }
   });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   4. PAGE NUMBERS
+   4. PAGE NUMBERS  — with live mock page preview
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
+  const dropEl = document.getElementById('pn-drop');
+  const inputEl= document.getElementById('pn-input');
+  const opts   = document.getElementById('pn-options');
+  const result = document.getElementById('pn-result');
+  const mockNum = document.getElementById('pn-mock-number');
+  const clearBtn = document.getElementById('pn-clear');
   let file = null;
   let selectedPos = 'top-center';
-  const opts = document.getElementById('pn-options');
-  const result = document.getElementById('pn-result');
+  let aborted = false;
 
-  setupDropZone(
-    document.getElementById('pn-drop'),
-    document.getElementById('pn-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
+  const POS_MAP = {
+    'top-left':      { top: '12px', left: '12px',  right: 'auto', bottom: 'auto', transform: 'none' },
+    'top-center':    { top: '12px', left: '50%',   right: 'auto', bottom: 'auto', transform: 'translateX(-50%)' },
+    'top-right':     { top: '12px', right: '12px', left: 'auto',  bottom: 'auto', transform: 'none' },
+    'bottom-left':   { bottom: '12px', left: '12px',  top: 'auto', right: 'auto', transform: 'none' },
+    'bottom-center': { bottom: '12px', left: '50%',   top: 'auto', right: 'auto', transform: 'translateX(-50%)' },
+    'bottom-right':  { bottom: '12px', right: '12px', top: 'auto', left: 'auto',  transform: 'none' },
+  };
+
+  function updateMock() {
+    if (!mockNum) return;
+    const format   = document.getElementById('pn-format').value;
+    const startNum = parseInt(document.getElementById('pn-start').value) || 1;
+    const color    = document.getElementById('pn-color').value;
+    const label    = format.replace('{n}', startNum).replace('{total}', '?');
+    mockNum.textContent = label;
+    mockNum.style.color = color;
+    const pos = POS_MAP[selectedPos] || POS_MAP['top-center'];
+    Object.assign(mockNum.style, pos);
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      file = null; aborted = true;
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      resetDropZone(dropEl, '#', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
+    });
+  }
+
+  setupDropZone(dropEl, inputEl, files => {
+    file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    opts.style.display = '';
+    updateMock();
+  });
 
   document.querySelectorAll('.pos-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedPos = btn.dataset.pos;
+      updateMock();
     });
+  });
+
+  ['pn-format', 'pn-start', 'pn-color'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateMock);
+    if (el) el.addEventListener('change', updateMock);
   });
 
   document.getElementById('pn-btn').addEventListener('click', async () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('position', selectedPos);
-    fd.append('format', document.getElementById('pn-format').value);
-    fd.append('startNum', document.getElementById('pn-start').value);
-    showLoading(result);
-    const res = await fetch('/api/pagenumbers', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'numbered.pdf', 'Page numbers added!');
+    if (!requirePDFLib(result)) return;
+    if (!file) { showError(result, 'Upload a PDF first'); return; }
+
+    const format   = document.getElementById('pn-format').value;
+    const startNum = parseInt(document.getElementById('pn-start').value) || 1;
+    const color    = hexToRgb(document.getElementById('pn-color').value || '#000000');
+    const filename = document.getElementById('pn-filename').value.trim() || 'numbered.pdf';
+    const large    = file.size > 5 * 1024 * 1024;
+    aborted = false;
+
+    if (large) {
+      showLoadingCancelable(result, 'Adding page numbers…', () => { aborted = true; result.innerHTML = ''; });
+    } else {
+      showLoading(result, 'Adding page numbers…');
+    }
+
+    try {
+      const buf       = await readFile(file);
+      if (aborted) return;
+      const doc       = await PDFDocument.load(buf);
+      if (aborted) return;
+      const font      = await doc.embedFont(StandardFonts.Helvetica);
+      const fontSize  = 11;
+      const margin    = 28;
+      const pageCount = doc.getPageCount();
+
+      doc.getPages().forEach((page, i) => {
+        const { width, height } = page.getSize();
+        const label     = format.replace('{n}', startNum + i).replace('{total}', pageCount);
+        const textWidth = font.widthOfTextAtSize(label, fontSize);
+        const [vPos, hPos] = selectedPos.split('-');
+        const y = vPos === 'top' ? height - margin : margin - fontSize;
+        const x = hPos === 'left' ? margin : hPos === 'right' ? width - textWidth - margin : (width - textWidth) / 2;
+        page.drawText(label, { x, y, size: fontSize, font, color });
+      });
+
+      if (aborted) return;
+      const bytes = await doc.save();
+      if (aborted) return;
+      showResult(result, 'Page numbers added!', `${fmt(bytes.length)} · ${filename}`, bytes, filename);
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to add page numbers');
+    }
   });
+
+  updateMock();
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   5. HEADERS & FOOTERS
+   5. HEADERS & FOOTERS  — with live mock page preview
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  let file = null;
-  const opts = document.getElementById('hf-options');
+  const dropEl = document.getElementById('hf-drop');
+  const inputEl= document.getElementById('hf-input');
+  const opts   = document.getElementById('hf-options');
   const result = document.getElementById('hf-result');
+  const mockHeader = document.getElementById('hf-mock-header');
+  const mockFooter = document.getElementById('hf-mock-footer');
+  const clearBtn   = document.getElementById('hf-clear');
+  let file = null;
+  let aborted = false;
 
-  setupDropZone(
-    document.getElementById('hf-drop'),
-    document.getElementById('hf-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
+  function updateMock() {
+    const headerText = document.getElementById('hf-header').value;
+    const footerText = document.getElementById('hf-footer').value;
+    const color      = document.getElementById('hf-color').value;
+
+    if (mockHeader) { mockHeader.textContent = headerText; mockHeader.style.color = color; }
+    if (mockFooter) { mockFooter.textContent = footerText; mockFooter.style.color = color; }
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      file = null; aborted = true;
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      resetDropZone(dropEl, '≡', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
+    });
+  }
+
+  setupDropZone(dropEl, inputEl, files => {
+    file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    opts.style.display = '';
+  });
+
+  ['hf-header', 'hf-footer', 'hf-color', 'hf-font-size'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', updateMock); el.addEventListener('change', updateMock); }
+  });
 
   document.getElementById('hf-btn').addEventListener('click', async () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('headerText', document.getElementById('hf-header').value);
-    fd.append('footerText', document.getElementById('hf-footer').value);
-    showLoading(result);
-    const res = await fetch('/api/headerfooter', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'headerfooter.pdf', 'Header & footer applied!');
-  });
-})();
+    if (!requirePDFLib(result)) return;
+    if (!file) { showError(result, 'Upload a PDF first'); return; }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   6. IMAGES TO PDF
-══════════════════════════════════════════════════════════════════════════════ */
-(function () {
-  const list = document.getElementById('convert-list');
-  const btn = document.getElementById('convert-btn');
-  const result = document.getElementById('convert-result');
-  let files = [];
+    const headerText = document.getElementById('hf-header').value;
+    const footerText = document.getElementById('hf-footer').value;
+    const fontSize   = parseFloat(document.getElementById('hf-font-size').value) || 10;
+    const color      = hexToRgb(document.getElementById('hf-color').value || '#000000');
+    const filename   = document.getElementById('hf-filename').value.trim() || 'headerfooter.pdf';
+    const large      = file.size > 5 * 1024 * 1024;
+    aborted = false;
 
-  function renderList() {
-    list.innerHTML = '';
-    files.forEach((f, i) => {
-      const li = document.createElement('li');
-      li.className = 'file-item';
-      li.innerHTML = `<span class="file-name">${f.name}</span>
-        <span class="file-size">${fmt(f.size)}</span>
-        <button class="remove-btn" data-i="${i}">×</button>`;
-      list.appendChild(li);
-    });
-    btn.disabled = files.length === 0;
-  }
-
-  list.addEventListener('click', e => {
-    const rb = e.target.closest('.remove-btn');
-    if (rb) { files.splice(+rb.dataset.i, 1); renderList(); }
-  });
-
-  setupDropZone(
-    document.getElementById('convert-drop'),
-    document.getElementById('convert-input'),
-    newFiles => { files.push(...newFiles); renderList(); },
-    true
-  );
-
-  btn.addEventListener('click', async () => {
-    const fd = new FormData();
-    files.forEach(f => fd.append('files', f));
-    showLoading(result);
-    const res = await fetch('/api/convert', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'images.pdf', 'Images converted to PDF!');
-  });
-})();
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   7. EXPORT TEXT
-══════════════════════════════════════════════════════════════════════════════ */
-(function () {
-  let file = null;
-  const opts = document.getElementById('extract-options');
-  const result = document.getElementById('extract-result');
-
-  setupDropZone(
-    document.getElementById('extract-drop'),
-    document.getElementById('extract-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
-
-  document.getElementById('extract-btn').addEventListener('click', async () => {
-    const format = document.querySelector('input[name="extract-format"]:checked').value;
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('format', format);
-    showLoading(result);
-    const res = await fetch('/api/extract', { method: 'POST', body: fd });
-    const ext = format;
-    await handleResponse(res, result, `extracted.${ext}`, 'Text extracted!');
-  });
-})();
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   8. COMPRESS
-══════════════════════════════════════════════════════════════════════════════ */
-(function () {
-  let file = null;
-  const opts = document.getElementById('compress-options');
-  const result = document.getElementById('compress-result');
-
-  setupDropZone(
-    document.getElementById('compress-drop'),
-    document.getElementById('compress-input'),
-    files => {
-      file = files[0];
-      opts.style.display = '';
-      opts.querySelector('.options-card') || (opts.innerHTML = `<div class="options-card">
-        <p style="color:#64748B;margin-bottom:12px">Original size: <strong>${fmt(file.size)}</strong></p>
-        <div class="action-row"><button class="btn btn-primary" id="compress-btn">Compress PDF</button></div>
-      </div>`);
-      setupCompressBtn();
+    if (large) {
+      showLoadingCancelable(result, 'Applying header/footer…', () => { aborted = true; result.innerHTML = ''; });
+    } else {
+      showLoading(result, 'Applying header/footer…');
     }
-  );
 
-  function setupCompressBtn() {
-    document.getElementById('compress-btn').addEventListener('click', async () => {
-      const fd = new FormData();
-      fd.append('file', file);
-      showLoading(result);
-      const res = await fetch('/api/compress', { method: 'POST', body: fd });
-      await handleResponse(res, result, 'compressed.pdf', 'PDF compressed!');
-    });
-  }
+    try {
+      const buf  = await readFile(file);
+      if (aborted) return;
+      const doc  = await PDFDocument.load(buf);
+      if (aborted) return;
+      const font = await doc.embedFont(StandardFonts.Helvetica);
+      const margin = 24;
+
+      doc.getPages().forEach(page => {
+        const { width, height } = page.getSize();
+        if (headerText) {
+          const tw = font.widthOfTextAtSize(headerText, fontSize);
+          page.drawText(headerText, { x: (width - tw) / 2, y: height - margin, size: fontSize, font, color });
+        }
+        if (footerText) {
+          const tw = font.widthOfTextAtSize(footerText, fontSize);
+          page.drawText(footerText, { x: (width - tw) / 2, y: margin - fontSize, size: fontSize, font, color });
+        }
+      });
+
+      if (aborted) return;
+      const bytes = await doc.save();
+      if (aborted) return;
+      showResult(result, 'Header & footer applied!', `${fmt(bytes.length)} · ${filename}`, bytes, filename);
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to apply header/footer');
+    }
+  });
+
+  updateMock();
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   9. WATERMARK
+   6. WATERMARK  — with live canvas preview (Canvas 2D overlay)
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  let file = null;
-  const opts = document.getElementById('wm-options');
-  const result = document.getElementById('wm-result');
-  const slider = document.getElementById('wm-opacity');
+  const dropEl  = document.getElementById('wm-drop');
+  const inputEl = document.getElementById('wm-input');
+  const opts    = document.getElementById('wm-options');
+  const result  = document.getElementById('wm-result');
+  const slider  = document.getElementById('wm-opacity');
   const sliderVal = document.getElementById('wm-opacity-val');
+  const prevCanvas = document.getElementById('wm-preview-canvas');
+  const prevPh     = document.getElementById('wm-preview-placeholder');
+  const clearBtn   = document.getElementById('wm-clear');
+  // Hide CSS overlay div if it exists (replaced by Canvas 2D)
+  const overlay = document.getElementById('wm-overlay');
+  if (overlay) overlay.style.display = 'none';
+  let file = null;
+  let aborted = false;
+  let baseImageData = null; // stored after PDF.js renders
+
+  function drawWatermarkOverlay() {
+    if (!baseImageData || !prevCanvas) return;
+    const ctx = prevCanvas.getContext('2d');
+    ctx.putImageData(baseImageData, 0, 0);
+
+    const text    = (document.getElementById('wm-text').value || 'WATERMARK').trim() || 'WATERMARK';
+    const opacity = parseFloat(slider.value) / 100;
+    const style   = document.getElementById('wm-style').value;
+    const color   = document.getElementById('wm-color').value || '#9CA3AF';
+    const cw = prevCanvas.width;
+    const ch = prevCanvas.height;
+    const fontSize = Math.round(cw * 0.10);
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.font = `${style === 'italic' ? 'italic ' : ''}${style === 'bold' ? 'bold ' : ''}${fontSize}px sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(cw / 2, ch / 2);
+    ctx.rotate(45 * Math.PI / 180);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  }
+
+  slider.addEventListener('input', () => {
+    sliderVal.textContent = slider.value + '%';
+    drawWatermarkOverlay();
+  });
+
+  ['wm-text', 'wm-style', 'wm-color'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', drawWatermarkOverlay); el.addEventListener('change', drawWatermarkOverlay); }
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      file = null; aborted = true; baseImageData = null;
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      prevCanvas.style.display = 'none';
+      if (prevPh) prevPh.style.display = '';
+      resetDropZone(dropEl, '◈', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
+    });
+  }
+
+  setupDropZone(dropEl, inputEl, async files => {
+    file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    opts.style.display = '';
+
+    baseImageData = null;
+    const buf = await readFile(file).catch(() => null);
+    if (buf) {
+      const ok = await renderPageToCanvas(buf, prevCanvas, 320);
+      if (ok) {
+        prevCanvas.style.display = '';
+        if (prevPh) prevPh.style.display = 'none';
+        const ctx = prevCanvas.getContext('2d');
+        baseImageData = ctx.getImageData(0, 0, prevCanvas.width, prevCanvas.height);
+        drawWatermarkOverlay();
+      }
+    }
+  });
+
+  const FONT_MAP = {
+    normal: StandardFonts?.Helvetica,
+    bold:   StandardFonts?.HelveticaBold,
+    italic: StandardFonts?.HelveticaOblique,
+  };
+
+  document.getElementById('wm-btn').addEventListener('click', async () => {
+    if (!requirePDFLib(result)) return;
+    if (!file) { showError(result, 'Upload a PDF first'); return; }
+
+    const text     = document.getElementById('wm-text').value || 'WATERMARK';
+    const opacity  = parseFloat(slider.value) / 100;
+    const style    = document.getElementById('wm-style').value;
+    const color    = hexToRgb(document.getElementById('wm-color').value || '#9CA3AF');
+    const filename = document.getElementById('wm-filename').value.trim() || 'watermarked.pdf';
+    const large    = file.size > 5 * 1024 * 1024;
+    aborted = false;
+
+    if (large) {
+      showLoadingCancelable(result, 'Applying watermark…', () => { aborted = true; result.innerHTML = ''; });
+    } else {
+      showLoading(result, 'Applying watermark…');
+    }
+
+    try {
+      const buf  = await readFile(file);
+      if (aborted) return;
+      const doc  = await PDFDocument.load(buf);
+      if (aborted) return;
+      const fontKey = FONT_MAP[style] || StandardFonts.Helvetica;
+      const font    = await doc.embedFont(fontKey);
+      const fontSize = 52;
+
+      doc.getPages().forEach(page => {
+        const { width, height } = page.getSize();
+        const tw = font.widthOfTextAtSize(text, fontSize);
+        page.drawText(text, {
+          x: (width - tw) / 2,
+          y: (height - fontSize) / 2,
+          size: fontSize, font, color, opacity,
+          rotate: degrees(45),
+        });
+      });
+
+      if (aborted) return;
+      const bytes = await doc.save();
+      if (aborted) return;
+      showResult(result, 'Watermark applied!', `${fmt(bytes.length)} · ${filename}`, bytes, filename);
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to add watermark');
+    }
+  });
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   7. COMPRESS
+══════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  const dropEl  = document.getElementById('compress-drop');
+  const inputEl = document.getElementById('compress-input');
+  const opts    = document.getElementById('compress-options');
+  const result  = document.getElementById('compress-result');
+  const slider  = document.getElementById('compress-target');
+  const sliderVal = document.getElementById('compress-target-val');
+  const clearBtn  = document.getElementById('compress-clear');
+  let file = null;
+  let aborted = false;
 
   slider.addEventListener('input', () => { sliderVal.textContent = slider.value + '%'; });
 
-  setupDropZone(
-    document.getElementById('wm-drop'),
-    document.getElementById('wm-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
-
-  document.getElementById('wm-btn').addEventListener('click', async () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('text', document.getElementById('wm-text').value);
-    fd.append('opacity', (parseFloat(slider.value) / 100).toFixed(2));
-    showLoading(result);
-    const res = await fetch('/api/watermark', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'watermarked.pdf', 'Watermark applied!');
-  });
-})();
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   10. REDACT
-══════════════════════════════════════════════════════════════════════════════ */
-(function () {
-  let file = null;
-  const opts = document.getElementById('redact-options');
-  const result = document.getElementById('redact-result');
-
-  setupDropZone(
-    document.getElementById('redact-drop'),
-    document.getElementById('redact-input'),
-    files => { file = files[0]; opts.style.display = ''; }
-  );
-
-  document.getElementById('redact-btn').addEventListener('click', async () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('terms', document.getElementById('redact-terms').value);
-    showLoading(result);
-    const res = await fetch('/api/redact', { method: 'POST', body: fd });
-    await handleResponse(res, result, 'redacted.pdf', 'PDF redacted!');
-  });
-})();
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   11. E-SIGNATURE
-══════════════════════════════════════════════════════════════════════════════ */
-(function () {
-  // Tab switching
-  document.querySelectorAll('.sign-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.sign-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.sign-tab-content').forEach(c => c.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      file = null; aborted = true;
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      const si = document.getElementById('compress-size-info');
+      if (si) si.textContent = '—';
+      resetDropZone(dropEl, '⊡', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
     });
+  }
+
+  setupDropZone(dropEl, inputEl, files => {
+    file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    opts.style.display = '';
+    const si = document.getElementById('compress-size-info');
+    if (si) si.textContent = fmt(file.size);
   });
 
-  // Signature sub-tabs
-  document.querySelectorAll('.sig-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.sig-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.sig-tab-content').forEach(c => c.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('sig-' + tab.dataset.sigtab).classList.add('active');
-    });
-  });
+  document.getElementById('compress-btn').addEventListener('click', async () => {
+    if (!requirePDFLib(result)) return;
+    if (!file) { showError(result, 'Upload a PDF first'); return; }
 
-  // Signature canvas
-  const canvas = document.getElementById('sig-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.strokeStyle = '#1E1B4B';
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  let drawing = false, hasDrawing = false;
+    const targetPct = parseInt(slider.value) || 30;
+    const filename  = document.getElementById('compress-filename').value.trim() || 'compressed.pdf';
+    const large     = file.size > 5 * 1024 * 1024;
+    aborted = false;
 
-  canvas.addEventListener('pointerdown', e => {
-    drawing = true; hasDrawing = true;
-    ctx.beginPath();
-    const r = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / r.width;
-    const scaleY = canvas.height / r.height;
-    ctx.moveTo((e.clientX - r.left) * scaleX, (e.clientY - r.top) * scaleY);
-  });
-  canvas.addEventListener('pointermove', e => {
-    if (!drawing) return;
-    const r = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / r.width;
-    const scaleY = canvas.height / r.height;
-    ctx.lineTo((e.clientX - r.left) * scaleX, (e.clientY - r.top) * scaleY);
-    ctx.stroke();
-  });
-  canvas.addEventListener('pointerup', () => { drawing = false; });
-  document.getElementById('sig-clear').addEventListener('click', () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    hasDrawing = false;
-  });
-
-  // Stamp tab
-  let signFile = null;
-  const signOpts = document.getElementById('sign-options');
-  const signResult = document.getElementById('sign-result');
-
-  setupDropZone(
-    document.getElementById('sign-drop'),
-    document.getElementById('sign-input'),
-    files => { signFile = files[0]; signOpts.style.display = ''; }
-  );
-
-  document.getElementById('sign-btn').addEventListener('click', async () => {
-    const activeTab = document.querySelector('.sig-tab.active').dataset.sigtab;
-    let sigBlob;
-
-    if (activeTab === 'draw') {
-      if (!hasDrawing) { showError(signResult, 'Please draw a signature first'); return; }
-      sigBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (large) {
+      showLoadingCancelable(result, 'Compressing…', () => { aborted = true; result.innerHTML = ''; });
     } else {
-      // Render typed text to canvas
-      const typed = document.getElementById('sig-typed').value;
-      if (!typed.trim()) { showError(signResult, 'Please type a signature'); return; }
-      const font = document.getElementById('sig-font').value;
-      const tc = document.createElement('canvas');
-      tc.width = 400; tc.height = 100;
-      const tctx = tc.getContext('2d');
-      tctx.font = `48px ${font}`;
-      tctx.fillStyle = '#1E1B4B';
-      tctx.textBaseline = 'middle';
-      tctx.fillText(typed, 20, 50);
-      sigBlob = await new Promise(res => tc.toBlob(res, 'image/png'));
+      showLoading(result, 'Compressing…');
     }
 
-    const fd = new FormData();
-    fd.append('file', signFile);
-    fd.append('signature', sigBlob, 'sig.png');
-    fd.append('page', document.getElementById('sign-page').value);
-    fd.append('x', '50');
-    fd.append('y', '100');
-    fd.append('width', '200');
-    fd.append('height', '80');
-    showLoading(signResult);
-    const res = await fetch('/api/sign', { method: 'POST', body: fd });
-    await handleResponse(res, signResult, 'signed.pdf', 'Signature applied!');
+    try {
+      const buf  = await readFile(file);
+      if (aborted) return;
+      const doc  = await PDFDocument.load(buf);
+      if (aborted) return;
+
+      // Compression strategy based on target
+      const saveOptions = { useObjectStreams: true };
+      if (targetPct >= 30) {
+        // Strip common metadata for extra savings
+        try { doc.setTitle(''); } catch (_) {}
+        try { doc.setAuthor(''); } catch (_) {}
+        try { doc.setSubject(''); } catch (_) {}
+        try { doc.setKeywords([]); } catch (_) {}
+        try { doc.setCreator(''); } catch (_) {}
+        try { doc.setProducer(''); } catch (_) {}
+      }
+
+      if (aborted) return;
+      const bytes = await doc.save(saveOptions);
+      if (aborted) return;
+
+      const saved = file.size - bytes.length;
+      const pct   = Math.round((1 - bytes.length / file.size) * 100);
+
+      if (saved > 0) {
+        const sub = `${fmt(file.size)} → ${fmt(bytes.length)} (saved ${pct}%) · ${filename}`;
+        showResult(result, 'PDF compressed!', sub, bytes, filename);
+        const subEl = result.querySelector('.result-sub');
+        if (subEl) subEl.style.color = '#166534';
+      } else {
+        showResult(result, 'PDF compressed!', 'File could not be reduced further', bytes, filename);
+        const subEl = result.querySelector('.result-sub');
+        if (subEl) subEl.style.color = '#64748b';
+      }
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to compress PDF');
+    }
+  });
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   8. REDACT  — visual canvas-based redact tool
+   Draw rectangles on rendered PDF pages; apply via pdf-lib on download.
+══════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  const dropEl       = document.getElementById('redact-drop');
+  const inputEl      = document.getElementById('redact-input');
+  const nav          = document.getElementById('redact-nav');
+  const opts         = document.getElementById('redact-options');
+  const result       = document.getElementById('redact-result');
+  const prevBtn      = document.getElementById('redact-prev');
+  const nextBtn      = document.getElementById('redact-next');
+  const pageLabel    = document.getElementById('redact-page-label');
+  const styleBtnBlack = document.getElementById('redact-style-black');
+  const styleBtnPx   = document.getElementById('redact-style-pixelate');
+  const rectsList    = document.getElementById('redact-rects-list');
+  const emptyHint    = document.getElementById('redact-empty-hint');
+  const countEl      = document.getElementById('redact-count');
+  const canvasWrap   = document.getElementById('redact-canvas-wrap');
+  const canvasPlPh   = document.getElementById('redact-canvas-placeholder');
+  const canvas       = document.getElementById('redact-canvas');
+  const overlaysEl   = document.getElementById('redact-overlays');
+  const canvasCard   = document.getElementById('redact-canvas-card');
+  const clearBtn     = document.getElementById('redact-clear');
+
+  const ctx = canvas.getContext('2d');
+
+  let pdfJsDoc    = null;  // pdfjs document object
+  let pageCount   = 0;
+  let currentPage = 1;
+  let pdfFile     = null;
+  let aborted     = false;
+
+  // rects[pageNum] = [{ x, y, width, height }] in canvas pixel coordinates
+  const rects      = {};
+  // canvasDims[pageNum] = { w, h } — stored when each page is rendered
+  const canvasDims = {};
+
+  // Drawing state
+  let drawing  = false;
+  let startX   = 0;
+  let startY   = 0;
+  let liveRect = null; // div showing the in-progress rectangle
+
+  let redactStyle = 'black';
+
+  /* ── Clear button ── */
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      pdfFile = null; pdfJsDoc = null; aborted = true;
+      pageCount = 0; currentPage = 1;
+      Object.keys(rects).forEach(k => delete rects[k]);
+      Object.keys(canvasDims).forEach(k => delete canvasDims[k]);
+      nav.style.display = 'none';
+      opts.style.display = 'none';
+      result.innerHTML = '';
+      canvasWrap.style.display = 'none';
+      canvasPlPh.style.display = '';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      overlaysEl.innerHTML = '';
+      updateRectsList();
+      resetDropZone(dropEl, '▬', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
+    });
+  }
+
+  /* ── Style toggle ── */
+  [styleBtnBlack, styleBtnPx].forEach(btn => {
+    btn.addEventListener('click', () => {
+      [styleBtnBlack, styleBtnPx].forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      redactStyle = btn.dataset.style;
+    });
   });
 
-  // Request tab
-  document.getElementById('req-btn').addEventListener('click', async () => {
-    const result = document.getElementById('req-result');
-    showLoading(result, 'Drafting email with AI…');
-    const res = await fetch('/api/sign/request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        senderName: document.getElementById('req-sender').value,
-        recipientName: document.getElementById('req-recipient').value,
-        recipientEmail: document.getElementById('req-email').value,
-        documentName: document.getElementById('req-doc').value,
-      })
+  /* ── Drop zone ── */
+  setupDropZone(dropEl, inputEl, async files => {
+    pdfFile = files[0];
+    setDropZoneFile(dropEl, pdfFile);
+    if (clearBtn) clearBtn.style.display = '';
+    showLoading(result, 'Loading PDF…');
+
+    // Reset saved rectangles from any previous file
+    Object.keys(rects).forEach(k => delete rects[k]);
+    Object.keys(canvasDims).forEach(k => delete canvasDims[k]);
+    updateRectsList();
+
+    try {
+      if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js library not loaded — check your connection and refresh.');
+      const buf = await readFile(pdfFile);
+      pdfJsDoc  = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+      pageCount   = pdfJsDoc.numPages;
+      currentPage = 1;
+      nav.style.display  = '';
+      opts.style.display = '';
+      result.innerHTML   = '';
+      await renderPage(currentPage);
+    } catch (e) {
+      showError(result, e.message || 'Failed to load PDF');
+    }
+  });
+
+  /* ── Page navigation ── */
+  prevBtn.addEventListener('click', async () => {
+    if (currentPage > 1) { currentPage--; await renderPage(currentPage); }
+  });
+  nextBtn.addEventListener('click', async () => {
+    if (currentPage < pageCount) { currentPage++; await renderPage(currentPage); }
+  });
+
+  /* ── Render a page onto the canvas ── */
+  async function renderPage(pageNum) {
+    if (!pdfJsDoc) return;
+    const page  = await pdfJsDoc.getPage(pageNum);
+    const vp0   = page.getViewport({ scale: 1 });
+    // Fit within the card width (subtract card padding)
+    const maxW  = Math.max(200, (canvasCard.clientWidth || 560) - 32);
+    const scale = Math.min(maxW / vp0.width, 2);
+    const vp    = page.getViewport({ scale });
+
+    canvas.width  = Math.floor(vp.width);
+    canvas.height = Math.floor(vp.height);
+    canvasDims[pageNum] = { w: canvas.width, h: canvas.height };
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+    pageLabel.textContent = `Page ${pageNum} of ${pageCount}`;
+    prevBtn.disabled      = pageNum === 1;
+    nextBtn.disabled      = pageNum === pageCount;
+
+    // Size the overlay container to match the canvas
+    overlaysEl.style.width  = canvas.width  + 'px';
+    overlaysEl.style.height = canvas.height + 'px';
+
+    canvasWrap.style.display = '';
+    canvasPlPh.style.display = 'none';
+
+    renderOverlays();
+  }
+
+  /* ── Re-draw confirmed rectangle overlays for the current page ── */
+  function renderOverlays() {
+    overlaysEl.innerHTML = '';
+    const pageRects = rects[currentPage] || [];
+    pageRects.forEach((r, i) => {
+      const el = document.createElement('div');
+      el.className = 'redact-overlay-rect';
+      Object.assign(el.style, {
+        left: r.x + 'px', top: r.y + 'px',
+        width: r.width + 'px', height: r.height + 'px',
+      });
+      const removeBtn = document.createElement('button');
+      removeBtn.className   = 'rect-remove';
+      removeBtn.textContent = '×';
+      removeBtn.title       = 'Remove';
+      removeBtn.addEventListener('click', () => {
+        rects[currentPage].splice(i, 1);
+        renderOverlays();
+        updateRectsList();
+      });
+      el.appendChild(removeBtn);
+      overlaysEl.appendChild(el);
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      showError(result, err.error);
+  }
+
+  /* ── Update the sidebar list of all marked areas ── */
+  function updateRectsList() {
+    const total = Object.values(rects).reduce((s, arr) => s + arr.length, 0);
+    countEl.textContent = total ? `(${total})` : '';
+
+    if (!total) {
+      rectsList.innerHTML = '';
+      rectsList.appendChild(emptyHint);
+      emptyHint.style.display = '';
       return;
     }
-    const data = await res.json();
-    result.innerHTML = `<div class="result-card" style="align-items:flex-start;flex-direction:column;gap:8px">
-      <div class="result-title" style="color:#065F46">✅ Email drafted by Claude AI</div>
-      <div class="ai-draft">${data.draft.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
-    </div>`;
+    emptyHint.style.display = 'none';
+    rectsList.innerHTML = '';
+
+    Object.entries(rects).sort(([a], [b]) => +a - +b).forEach(([pg, pgRects]) => {
+      pgRects.forEach((r, i) => {
+        const item = document.createElement('div');
+        item.className = 'redact-rect-item';
+        item.innerHTML = `<span>Page ${pg} — ${Math.round(r.width)}×${Math.round(r.height)}px</span>`;
+        const removeBtn = document.createElement('button');
+        removeBtn.className   = 'btn-danger-ghost';
+        removeBtn.textContent = '×';
+        removeBtn.title       = 'Remove';
+        removeBtn.style.cssText = 'padding:2px 8px;font-size:14px;line-height:1;flex-shrink:0';
+        removeBtn.addEventListener('click', () => {
+          rects[pg].splice(i, 1);
+          if (!rects[pg].length) delete rects[pg];
+          updateRectsList();
+          if (+pg === currentPage) renderOverlays();
+        });
+        item.appendChild(removeBtn);
+        rectsList.appendChild(item);
+      });
+    });
+  }
+
+  /* ── Canvas coordinate helper (accounts for CSS scaling) ── */
+  function getEventPos(e) {
+    if (e.touches && e.touches.length)
+      return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches.length)
+      return { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
+    return { clientX: e.clientX, clientY: e.clientY };
+  }
+
+  function getCanvasPos({ clientX, clientY }) {
+    const r      = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / r.width;
+    const scaleY = canvas.height / r.height;
+    return {
+      x: Math.max(0, Math.min(canvas.width,  (clientX - r.left) * scaleX)),
+      y: Math.max(0, Math.min(canvas.height, (clientY - r.top)  * scaleY)),
+    };
+  }
+
+  /* ── Mouse / touch drawing ── */
+  function startDraw(e) {
+    e.preventDefault();
+    if (!pdfJsDoc) return;
+    drawing = true;
+    const pos = getCanvasPos(getEventPos(e));
+    startX = pos.x;
+    startY = pos.y;
+
+    liveRect = document.createElement('div');
+    liveRect.className = 'redact-overlay-drawing';
+    liveRect.style.display = 'none';
+    overlaysEl.appendChild(liveRect);
+  }
+
+  function moveDraw(e) {
+    if (!drawing || !liveRect) return;
+    e.preventDefault();
+    const pos = getCanvasPos(getEventPos(e));
+    const x = Math.min(pos.x, startX);
+    const y = Math.min(pos.y, startY);
+    const w = Math.abs(pos.x - startX);
+    const h = Math.abs(pos.y - startY);
+    Object.assign(liveRect.style, {
+      left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px',
+      display: (w > 2 && h > 2) ? '' : 'none',
+    });
+  }
+
+  function endDraw(e) {
+    if (!drawing) return;
+    drawing = false;
+    if (liveRect) { liveRect.remove(); liveRect = null; }
+
+    const pos = getCanvasPos(getEventPos(e));
+    const x = Math.min(pos.x, startX);
+    const y = Math.min(pos.y, startY);
+    const w = Math.abs(pos.x - startX);
+    const h = Math.abs(pos.y - startY);
+
+    if (w >= 10 && h >= 10) {
+      if (!rects[currentPage]) rects[currentPage] = [];
+      rects[currentPage].push({ x, y, width: w, height: h });
+      renderOverlays();
+      updateRectsList();
+    }
+  }
+
+  canvas.addEventListener('mousedown',  startDraw);
+  window.addEventListener('mousemove',  moveDraw);
+  window.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  window.addEventListener('touchmove',  moveDraw,  { passive: false });
+  window.addEventListener('touchend',   endDraw);
+
+  /* ── Apply & Download ── */
+  document.getElementById('redact-btn').addEventListener('click', async () => {
+    if (!requirePDFLib(result)) return;
+    if (!pdfFile) { showError(result, 'Upload a PDF first'); return; }
+
+    const totalRects = Object.values(rects).reduce((s, arr) => s + arr.length, 0);
+    if (!totalRects) { showError(result, 'Draw at least one rectangle on the canvas to redact'); return; }
+
+    const filename = document.getElementById('redact-filename').value.trim() || 'redacted.pdf';
+    aborted = false;
+
+    showLoadingCancelable(result, `Applying redactions to page 1 of ${pageCount}…`, () => {
+      aborted = true; result.innerHTML = '';
+    });
+
+    try {
+      const buf = await readFile(pdfFile);
+      if (aborted) return;
+      const doc = await PDFDocument.load(buf);
+      if (aborted) return;
+
+      const pages = doc.getPages();
+
+      for (let pgNum = 1; pgNum <= pages.length; pgNum++) {
+        if (aborted) return;
+        const pgRects = rects[pgNum];
+        if (!pgRects || !pgRects.length) continue;
+
+        // Update progress message
+        const msgEl = result.querySelector('.loading-card span');
+        if (msgEl) msgEl.textContent = `Applying redactions to page ${pgNum} of ${pageCount}…`;
+
+        const page           = pages[pgNum - 1];
+        const { width: pgW, height: pgH } = page.getSize();
+        const dims           = canvasDims[pgNum];
+        if (!dims) continue; // page was never rendered — skip
+
+        // Convert canvas px coordinates → PDF point coordinates
+        // PDF y-axis is inverted (0 = bottom)
+        const scaleX = pgW / dims.w;
+        const scaleY = pgH / dims.h;
+
+        pgRects.forEach(r => {
+          const pdfX = r.x * scaleX;
+          const pdfY = pgH - (r.y + r.height) * scaleY;
+          const pdfW = r.width  * scaleX;
+          const pdfH = r.height * scaleY;
+
+          if (redactStyle === 'black') {
+            page.drawRectangle({ x: pdfX, y: pdfY, width: pdfW, height: pdfH, color: rgb(0, 0, 0), opacity: 1 });
+          } else {
+            console.log('rgb:', typeof rgb);
+            const blockSize = 8;
+            for (let bx = 0; bx < pdfW; bx += blockSize) {
+              for (let by = 0; by < pdfH; by += blockSize) {
+                const grey = 0.3 + Math.random() * 0.4;
+                const blockW = Math.min(blockSize, pdfW - bx);
+                const blockH = Math.min(blockSize, pdfH - by);
+                page.drawRectangle({
+                  x: pdfX + bx,
+                  y: pdfY + by,
+                  width: blockW,
+                  height: blockH,
+                  color: rgb(grey, grey, grey),
+                  opacity: 1,
+                });
+              }
+            }
+          }
+        });
+      }
+
+      if (aborted) return;
+      const bytes = await doc.save();
+      if (aborted) return;
+
+      const styleLabel = redactStyle === 'black' ? 'black box' : 'pixelated';
+      showResult(result, 'PDF redacted!',
+        `${totalRects} redaction${totalRects !== 1 ? 's' : ''} (${styleLabel}) · ${fmt(bytes.length)} · ${filename}`,
+        bytes, filename);
+    } catch (e) {
+      if (!aborted) showError(result, e.message || 'Failed to redact PDF');
+    }
   });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   12. FORM FILLER
+   9. FORM FILLER  — with Cancel button during scan
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  let sessionId = null;
-  let fields = [];
+  const dropEl    = document.getElementById('form-drop');
+  const inputEl   = document.getElementById('form-input');
   const fieldsArea = document.getElementById('form-fields-area');
   const fieldCount = document.getElementById('form-field-count');
   const fieldsList = document.getElementById('form-fields-list');
-  const result = document.getElementById('form-result');
+  const result     = document.getElementById('form-result');
+  const clearBtn   = document.getElementById('form-clear');
+  let rawBytes  = null;
+  let scanAborted = false;
 
-  setupDropZone(
-    document.getElementById('form-drop'),
-    document.getElementById('form-input'),
-    async files => {
-      showLoading(result, 'Scanning form fields…');
-      const fd = new FormData();
-      fd.append('file', files[0]);
-      const res = await fetch('/api/form/scan', { method: 'POST', body: fd });
-      if (!res.ok) { const e = await res.json(); showError(result, e.error); return; }
-      const data = await res.json();
-      sessionId = data.sessionId;
-      fields = data.fields;
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      rawBytes = null; scanAborted = true;
+      fieldsArea.style.display = 'none';
+      fieldsList.innerHTML = '';
+      result.innerHTML = '';
+      resetDropZone(dropEl, '⊟', 'Drop a PDF here or <span class="link-label">browse</span>', 'PDF with interactive form fields');
+      clearBtn.style.display = 'none';
+    });
+  }
+
+  /* ── Get visual sort position from field widget annotation ── */
+  function getFieldSortPos(pdfLibField) {
+    try {
+      const widgets = pdfLibField.acroField.getWidgets();
+      if (widgets && widgets.length > 0) {
+        const rect = widgets[0].getRectangle();
+        if (rect) return { y: rect.y, x: rect.x };
+      }
+    } catch (_) {}
+    return null; // fallback to alphabetical
+  }
+
+  setupDropZone(dropEl, inputEl, async files => {
+    scanAborted = false;
+    setDropZoneFile(dropEl, files[0]);
+    if (clearBtn) clearBtn.style.display = '';
+
+    showLoadingCancelable(result, 'Scanning form fields…', () => {
+      scanAborted = true;
+      rawBytes = null;
+      fieldsArea.style.display = 'none';
+      result.innerHTML = '';
+    });
+
+    try {
+      rawBytes = await readFile(files[0]);
+      if (scanAborted) return;
+
+      const doc  = await PDFDocument.load(rawBytes);
+      if (scanAborted) return;
+
+      const form = doc.getForm();
+
+      // Build field list — detect checkbox by method presence (robust against minification)
+      const rawFields = form.getFields().map(f => ({
+        name:     f.getName(),
+        isCheckBox: typeof f.check === 'function',
+        type:     typeof f.check === 'function' ? 'checkbox'
+                : typeof f.setText === 'function' ? 'text'
+                : typeof f.select === 'function' ? 'select'
+                : f.constructor.name.replace('PDF', '').replace('Field', '').toLowerCase(),
+        pos:      getFieldSortPos(f),
+      }));
+
+      // Sort: y descending (top of page first), then x ascending (left to right)
+      // Fields without position info fall back to alphabetical at end
+      const fields = rawFields.sort((a, b) => {
+        if (a.pos && b.pos) {
+          if (Math.abs(a.pos.y - b.pos.y) > 4) return b.pos.y - a.pos.y; // y descending
+          return a.pos.x - b.pos.x;                                        // x ascending
+        }
+        if (a.pos && !b.pos) return -1;
+        if (!a.pos && b.pos) return 1;
+        return a.name.localeCompare(b.name); // alphabetical fallback
+      });
+
       result.innerHTML = '';
 
       if (!fields.length) {
@@ -569,74 +1458,152 @@ function makeSortable(list) {
 
       fieldCount.textContent = `${fields.length} field${fields.length !== 1 ? 's' : ''} detected`;
       fieldsList.innerHTML = '';
+
       fields.forEach(f => {
         const row = document.createElement('div');
         row.className = 'form-field-row';
-        row.innerHTML = `<span class="field-label">${f.name}</span>
-          <span class="field-type">${f.type}</span>
-          <input class="text-input field-input" data-name="${f.name}" placeholder="Value…" />`;
+
+        if (f.isCheckBox) {
+          // Render as a styled toggle switch
+          row.innerHTML = `<span class="field-label">${f.name}</span>
+            <span class="field-type">checkbox</span>
+            <label class="toggle-switch">
+              <input type="checkbox" data-field="${f.name}" data-type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>`;
+        } else {
+          // Render as a text input
+          row.innerHTML = `<span class="field-label">${f.name}</span>
+            <span class="field-type">${f.type}</span>
+            <input class="text-input field-input" data-field="${f.name}" data-type="text" placeholder="Value…" />`;
+        }
+
         fieldsList.appendChild(row);
       });
+
       fieldsArea.style.display = '';
+    } catch (e) {
+      if (!scanAborted) showError(result, e.message || 'Failed to scan form fields');
     }
-  );
+  });
 
   document.getElementById('form-fill-btn').addEventListener('click', async () => {
-    const values = {};
-    fieldsList.querySelectorAll('[data-name]').forEach(inp => {
-      if (inp.value) values[inp.dataset.name] = inp.value;
-    });
-    showLoading(result);
-    const res = await fetch('/api/form/fill', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, values })
-    });
-    await handleResponse(res, result, 'filled.pdf', 'Form filled & flattened!');
+    if (!requirePDFLib(result)) return;
+    if (!rawBytes) { showError(result, 'Upload a PDF first'); return; }
+
+    const filename = document.getElementById('form-filename').value.trim() || 'filled.pdf';
+    showLoading(result, 'Filling form…');
+
+    try {
+      const doc  = await PDFDocument.load(rawBytes);
+      const form = doc.getForm();
+
+      // Handle checkboxes
+      fieldsList.querySelectorAll('[data-field][data-type="checkbox"]').forEach(input => {
+        try {
+          const field = form.getField(input.dataset.field);
+          if (typeof field.check === 'function') {
+            input.checked ? field.check() : field.uncheck();
+          }
+        } catch (_) { /* skip unsupported field */ }
+      });
+
+      // Handle text/select fields
+      fieldsList.querySelectorAll('[data-field][data-type="text"]').forEach(input => {
+        try {
+          if (!input.value) return;
+          const field = form.getField(input.dataset.field);
+          if (typeof field.setText === 'function')     field.setText(input.value);
+          else if (typeof field.select === 'function') field.select(input.value);
+        } catch (_) { /* skip unsupported field */ }
+      });
+
+      form.flatten();
+      const bytes = await doc.save();
+      showResult(result, 'Form filled & flattened!', `${fmt(bytes.length)} · ${filename}`, bytes, filename);
+    } catch (e) {
+      showError(result, e.message || 'Failed to fill form');
+    }
   });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   13. PDF INFO
+   10. PDF INFO  — fixed: shows page count, file size, metadata, per-page table
 ══════════════════════════════════════════════════════════════════════════════ */
 (function () {
-  const infoResults = document.getElementById('info-results');
-  const infoMeta = document.getElementById('info-meta');
-  const infoTbl = document.getElementById('info-pages-tbl').querySelector('tbody');
+  const dropEl    = document.getElementById('info-drop');
+  const inputEl   = document.getElementById('info-input');
+  const status    = document.getElementById('info-status');
+  const results   = document.getElementById('info-results');
+  const metaGrid  = document.getElementById('info-meta');
+  const pagesTbody = document.getElementById('info-pages-tbl').querySelector('tbody');
+  const clearBtn   = document.getElementById('info-clear');
 
-  setupDropZone(
-    document.getElementById('info-drop'),
-    document.getElementById('info-input'),
-    async files => {
-      const fd = new FormData();
-      fd.append('file', files[0]);
-      const res = await fetch('/api/info', { method: 'POST', body: fd });
-      if (!res.ok) { const e = await res.json(); showError(document.getElementById('info-result'), e.error); return; }
-      const d = await res.json();
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      results.style.display = 'none';
+      status.innerHTML = '';
+      metaGrid.innerHTML = '';
+      pagesTbody.innerHTML = '';
+      resetDropZone(dropEl, 'ℹ', 'Drop a PDF here or <span class="link-label">browse</span>', 'Single PDF file');
+      clearBtn.style.display = 'none';
+    });
+  }
+
+  setupDropZone(dropEl, inputEl, async files => {
+    const file = files[0];
+    setDropZoneFile(dropEl, file);
+    if (clearBtn) clearBtn.style.display = '';
+    results.style.display = 'none';
+    showLoading(status, 'Reading PDF…');
+
+    if (!requirePDFLib(status)) return;
+
+    try {
+      const buf = await readFile(file);
+      const doc = await PDFDocument.load(buf);
+
+      /* Safe metadata access helpers */
+      function safeMeta(fn)  { try { const v = fn(); return v || '—'; } catch (_) { return '—'; } }
+      function safeDate(fn)  {
+        try { const d = fn(); return d instanceof Date ? d.toLocaleString() : '—'; }
+        catch (_) { return '—'; }
+      }
 
       const meta = [
-        { label: 'Page Count', value: d.pageCount, large: true },
-        { label: 'Title', value: d.title || '—' },
-        { label: 'Author', value: d.author || '—' },
-        { label: 'Subject', value: d.subject || '—' },
-        { label: 'Creator', value: d.creator || '—' },
-        { label: 'Producer', value: d.producer || '—' },
-        { label: 'Created', value: d.creationDate ? new Date(d.creationDate).toLocaleString() : '—' },
-        { label: 'Modified', value: d.modDate ? new Date(d.modDate).toLocaleString() : '—' },
+        { label: 'Page Count', value: doc.getPageCount(), large: true },
+        { label: 'File Size',  value: fmt(file.size) },
+        { label: 'Title',      value: safeMeta(() => doc.getTitle())    },
+        { label: 'Author',     value: safeMeta(() => doc.getAuthor())   },
+        { label: 'Subject',    value: safeMeta(() => doc.getSubject())  },
+        { label: 'Creator',    value: safeMeta(() => doc.getCreator())  },
+        { label: 'Producer',   value: safeMeta(() => doc.getProducer()) },
+        { label: 'Created',    value: safeDate(() => doc.getCreationDate())     },
+        { label: 'Modified',   value: safeDate(() => doc.getModificationDate()) },
       ];
 
-      infoMeta.innerHTML = meta.map(m =>
+      metaGrid.innerHTML = meta.map(m =>
         `<div class="info-card">
           <div class="info-card-label">${m.label}</div>
           <div class="info-card-value${m.large ? ' large' : ''}">${m.value}</div>
         </div>`
       ).join('');
 
-      infoTbl.innerHTML = d.pages.map(p =>
-        `<tr><td>${p.page}</td><td>${p.width}</td><td>${p.height}</td><td>${p.rotation}°</td></tr>`
-      ).join('');
+      pagesTbody.innerHTML = doc.getPages().map((p, i) => {
+        const { width, height } = p.getSize();
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${width.toFixed(1)}</td>
+          <td>${height.toFixed(1)}</td>
+          <td>${p.getRotation().angle}°</td>
+        </tr>`;
+      }).join('');
 
-      infoResults.style.display = '';
+      status.innerHTML = '';
+      results.style.display = '';
+    } catch (e) {
+      showError(status, e.message || 'Failed to read PDF — file may be encrypted or corrupted.');
+      results.style.display = 'none';
     }
-  );
+  });
 })();

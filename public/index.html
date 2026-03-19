@@ -4,333 +4,484 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PageHub — PDF Toolkit</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <!-- Sidebar -->
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="logo">
-        <span class="logo-icon">⬡</span>
-        <span class="logo-text">PageHub</span>
-      </div>
-      <p class="logo-tagline">PDF Toolkit</p>
+      <a href="/" class="logo">
+        <img src="/logos/pagehub_logo_white.webp" alt="PageHub" style="height: 48px; width: auto;" />
+      </a>
     </div>
 
     <nav class="sidebar-nav">
       <div class="nav-group">
         <span class="nav-group-label">Organise</span>
         <button class="nav-item active" data-tool="merge">
-          <span class="nav-icon">⊕</span> Merge PDFs
+          <span class="nav-icon">⊕</span>Merge PDFs
         </button>
         <button class="nav-item" data-tool="split">
-          <span class="nav-icon">⊖</span> Split PDF
+          <span class="nav-icon">⊖</span>Split PDF
         </button>
         <button class="nav-item" data-tool="rotate">
-          <span class="nav-icon">↻</span> Rotate Pages
+          <span class="nav-icon">↻</span>Rotate Pages
         </button>
       </div>
 
       <div class="nav-group">
         <span class="nav-group-label">Annotate</span>
         <button class="nav-item" data-tool="pagenumbers">
-          <span class="nav-icon">#</span> Page Numbers
+          <span class="nav-icon">#</span>Page Numbers
         </button>
         <button class="nav-item" data-tool="headerfooter">
-          <span class="nav-icon">≡</span> Headers &amp; Footers
+          <span class="nav-icon">≡</span>Headers &amp; Footers
         </button>
         <button class="nav-item" data-tool="watermark">
-          <span class="nav-icon">◈</span> Watermark
+          <span class="nav-icon">◈</span>Watermark
         </button>
       </div>
 
       <div class="nav-group">
-        <span class="nav-group-label">Convert</span>
-        <button class="nav-item" data-tool="convert">
-          <span class="nav-icon">⊞</span> Images to PDF
-        </button>
-        <button class="nav-item" data-tool="extract">
-          <span class="nav-icon">⇥</span> Export Text
-        </button>
+        <span class="nav-group-label">Optimise</span>
         <button class="nav-item" data-tool="compress">
-          <span class="nav-icon">⊡</span> Compress PDF
+          <span class="nav-icon">⊡</span>Compress PDF
         </button>
       </div>
 
       <div class="nav-group">
         <span class="nav-group-label">Security &amp; Forms</span>
         <button class="nav-item" data-tool="redact">
-          <span class="nav-icon">▬</span> Redact
-        </button>
-        <button class="nav-item" data-tool="sign">
-          <span class="nav-icon">✎</span> E-Signature
+          <span class="nav-icon">▬</span>Redact
         </button>
         <button class="nav-item" data-tool="form">
-          <span class="nav-icon">⊟</span> Form Filler
+          <span class="nav-icon">⊟</span>Form Filler
         </button>
       </div>
 
       <div class="nav-group">
         <span class="nav-group-label">Analyse</span>
         <button class="nav-item" data-tool="info">
-          <span class="nav-icon">ℹ</span> PDF Info
+          <span class="nav-icon">ℹ</span>PDF Info
         </button>
       </div>
     </nav>
 
     <div class="sidebar-footer">
-      <span class="badge-amber">13 Tools</span>
+      <span class="badge-amber">10 Tools</span>
     </div>
   </aside>
 
-  <!-- Main content -->
+  <!-- ─── Main ─────────────────────────────────────────────────────────────── -->
   <main class="main">
-    <!-- ── 1. Merge ── -->
+
+    <!-- ══ 1. MERGE ══════════════════════════════════════════════════════════ -->
     <section class="tool-view active" id="view-merge">
       <div class="tool-header">
-        <h1>Merge PDFs</h1>
-        <p>Upload multiple PDFs, reorder them, then merge into one file.</p>
+        <span class="tool-header-glyph" aria-hidden="true">⊕</span>
+        <div class="tool-header-content">
+          <h1>Merge PDFs</h1>
+          <p>Upload multiple PDFs, reorder them, then merge into one file.</p>
+        </div>
       </div>
       <div class="tool-body">
-        <div class="drop-zone" id="merge-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">⊕</div>
-            <p>Drop PDF files here or <label class="link-label" for="merge-input">browse</label></p>
-            <input type="file" id="merge-input" accept=".pdf" multiple hidden />
+        <div class="drop-zone-wrap">
+          <div class="drop-zone" id="merge-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">⊕</div>
+              <p>Drop PDF files here or <span class="link-label">browse</span></p>
+              <span class="drop-hint">Accepts multiple files — drag to reorder</span>
+              <input type="file" id="merge-input" accept=".pdf" multiple style="display:none" />
+            </div>
           </div>
+          <button class="btn-clear-file" id="merge-clear" style="display:none">× Clear</button>
         </div>
         <ul class="file-list sortable" id="merge-list"></ul>
-        <div class="action-row">
-          <button class="btn btn-primary" id="merge-btn" disabled>Merge PDFs</button>
+        <div id="merge-actions" style="display:none">
+          <div class="filename-row">
+            <label for="merge-filename">Output filename</label>
+            <input type="text" id="merge-filename" class="text-input" value="merged.pdf" />
+          </div>
+          <div class="action-row" style="padding-top:12px">
+            <button class="btn btn-primary" id="merge-btn">Merge PDFs</button>
+          </div>
         </div>
         <div class="result-area" id="merge-result"></div>
       </div>
     </section>
 
-    <!-- ── 2. Split ── -->
+    <!-- ══ 2. SPLIT ═══════════════════════════════════════════════════════════ -->
     <section class="tool-view" id="view-split">
       <div class="tool-header">
-        <h1>Split PDF</h1>
-        <p>Extract all pages as individual PDFs in a zip, or extract a custom page range.</p>
+        <span class="tool-header-glyph" aria-hidden="true">⊖</span>
+        <div class="tool-header-content">
+          <h1>Split PDF</h1>
+          <p>Define one or more page ranges — each downloads as its own PDF file.</p>
+        </div>
       </div>
       <div class="tool-body">
-        <div class="drop-zone" id="split-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">⊖</div>
-            <p>Drop a PDF here or <label class="link-label" for="split-input">browse</label></p>
-            <input type="file" id="split-input" accept=".pdf" hidden />
-          </div>
-        </div>
-        <div class="options-card" id="split-options" style="display:none">
-          <div class="option-row">
-            <label>Mode</label>
-            <div class="radio-group">
-              <label><input type="radio" name="split-mode" value="all" checked /> All pages</label>
-              <label><input type="radio" name="split-mode" value="range" /> Custom range</label>
+        <div class="drop-zone-wrap">
+          <div class="drop-zone" id="split-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">⊖</div>
+              <p>Drop a PDF here or <span class="link-label">browse</span></p>
+              <span class="drop-hint">Single PDF file</span>
+              <input type="file" id="split-input" accept=".pdf" style="display:none" />
             </div>
           </div>
-          <div class="option-row" id="split-range-row" style="display:none">
-            <label for="split-range">Page range</label>
-            <input type="text" id="split-range" class="text-input" placeholder="e.g. 1-3, 5, 7-9" />
+          <button class="btn-clear-file" id="split-clear" style="display:none">× Clear</button>
+        </div>
+        <div class="options-card" id="split-options" style="display:none">
+          <div class="split-ranges-area">
+            <div class="split-ranges-header">
+              <span class="split-ranges-label">Extraction ranges</span>
+              <button class="btn btn-ghost btn-sm" id="split-add-range">+ Add range</button>
+            </div>
+            <div id="split-ranges-list"></div>
           </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="split-btn">Split PDF</button>
+          <div class="action-row" style="padding: 0 0 16px">
+            <button class="btn btn-primary" id="split-btn">Extract &amp; Download All</button>
           </div>
         </div>
         <div class="result-area" id="split-result"></div>
       </div>
     </section>
 
-    <!-- ── 3. Rotate ── -->
+    <!-- ══ 3. ROTATE (with live preview) ══════════════════════════════════════ -->
     <section class="tool-view" id="view-rotate">
       <div class="tool-header">
-        <h1>Rotate Pages</h1>
-        <p>Rotate all, odd, even, or specific pages by 90, 180, or 270 degrees.</p>
+        <span class="tool-header-glyph" aria-hidden="true">↻</span>
+        <div class="tool-header-content">
+          <h1>Rotate Pages</h1>
+          <p>Rotate all, odd, even, or specific pages by 90, 180, or 270 degrees.</p>
+        </div>
       </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="rotate-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">↻</div>
-            <p>Drop a PDF here or <label class="link-label" for="rotate-input">browse</label></p>
-            <input type="file" id="rotate-input" accept=".pdf" hidden />
+      <div class="tool-body tool-body-split">
+        <div class="tool-controls">
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="rotate-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">↻</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="rotate-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="rotate-clear" style="display:none">× Clear</button>
           </div>
-        </div>
-        <div class="options-card" id="rotate-options" style="display:none">
-          <div class="option-row">
-            <label>Apply to</label>
-            <div class="radio-group">
-              <label><input type="radio" name="rotate-target" value="all" checked /> All pages</label>
-              <label><input type="radio" name="rotate-target" value="odd" /> Odd pages</label>
-              <label><input type="radio" name="rotate-target" value="even" /> Even pages</label>
-              <label><input type="radio" name="rotate-target" value="custom" /> Custom range</label>
+          <div class="options-card" id="rotate-options" style="display:none">
+            <div class="option-row">
+              <label>Apply to</label>
+              <div class="radio-group">
+                <label><input type="radio" name="rotate-target" value="all" checked /> All pages</label>
+                <label><input type="radio" name="rotate-target" value="odd" /> Odd pages</label>
+                <label><input type="radio" name="rotate-target" value="even" /> Even pages</label>
+                <label><input type="radio" name="rotate-target" value="custom" /> Custom range</label>
+              </div>
+            </div>
+            <div class="option-row" id="rotate-range-row" style="display:none">
+              <label for="rotate-range">Page range</label>
+              <input type="text" id="rotate-range" class="text-input" placeholder="e.g. 1-3, 5" />
+            </div>
+            <div class="option-row">
+              <label>Angle</label>
+              <div class="radio-group">
+                <label><input type="radio" name="rotate-angle" value="reset" /> Reset to 0° (remove rotation)</label>
+                <label><input type="radio" name="rotate-angle" value="90" checked /> 90°</label>
+                <label><input type="radio" name="rotate-angle" value="180" /> 180°</label>
+                <label><input type="radio" name="rotate-angle" value="270" /> 270°</label>
+              </div>
+            </div>
+            <div class="option-row">
+              <label for="rotate-filename">Output filename</label>
+              <input type="text" id="rotate-filename" class="text-input" value="rotated.pdf" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="rotate-btn">Rotate Pages</button>
             </div>
           </div>
-          <div class="option-row" id="rotate-range-row" style="display:none">
-            <label for="rotate-range">Page range</label>
-            <input type="text" id="rotate-range" class="text-input" placeholder="e.g. 1-3, 5" />
-          </div>
-          <div class="option-row">
-            <label>Angle</label>
-            <div class="radio-group">
-              <label><input type="radio" name="rotate-angle" value="90" checked /> 90°</label>
-              <label><input type="radio" name="rotate-angle" value="180" /> 180°</label>
-              <label><input type="radio" name="rotate-angle" value="270" /> 270°</label>
-            </div>
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="rotate-btn">Rotate Pages</button>
-          </div>
+          <div class="result-area" id="rotate-result"></div>
         </div>
-        <div class="result-area" id="rotate-result"></div>
+
+        <aside class="tool-preview-panel">
+          <div class="preview-card">
+            <div class="preview-card-title">Preview · Page 1</div>
+            <div class="preview-canvas-wrap" id="rotate-canvas-wrap">
+              <p class="preview-placeholder" id="rotate-preview-placeholder">Upload a PDF to see preview</p>
+              <canvas id="rotate-preview-canvas" style="display:none"></canvas>
+            </div>
+            <p class="preview-label" id="rotate-preview-label"></p>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <!-- ── 4. Page Numbers ── -->
+    <!-- ══ 4. PAGE NUMBERS (with live mock preview) ════════════════════════════ -->
     <section class="tool-view" id="view-pagenumbers">
       <div class="tool-header">
-        <h1>Page Numbers</h1>
-        <p>Add page numbers at any corner or centre, with multiple format options.</p>
-      </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="pn-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">#</div>
-            <p>Drop a PDF here or <label class="link-label" for="pn-input">browse</label></p>
-            <input type="file" id="pn-input" accept=".pdf" hidden />
-          </div>
+        <span class="tool-header-glyph" aria-hidden="true">#</span>
+        <div class="tool-header-content">
+          <h1>Page Numbers</h1>
+          <p>Add page numbers at any corner or centre, with format and colour options.</p>
         </div>
-        <div class="options-card" id="pn-options" style="display:none">
-          <div class="option-row">
-            <label>Position</label>
-            <div class="position-grid">
-              <button class="pos-btn" data-pos="top-left">↖ Top Left</button>
-              <button class="pos-btn selected" data-pos="top-center">↑ Top Centre</button>
-              <button class="pos-btn" data-pos="top-right">↗ Top Right</button>
-              <button class="pos-btn" data-pos="bottom-left">↙ Bot Left</button>
-              <button class="pos-btn" data-pos="bottom-center">↓ Bot Centre</button>
-              <button class="pos-btn" data-pos="bottom-right">↘ Bot Right</button>
+      </div>
+      <div class="tool-body tool-body-split">
+        <div class="tool-controls">
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="pn-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">#</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="pn-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="pn-clear" style="display:none">× Clear</button>
+          </div>
+          <div class="options-card" id="pn-options" style="display:none">
+            <div class="option-row">
+              <label>Position</label>
+              <div class="position-grid">
+                <button class="pos-btn" data-pos="top-left">↖ Top Left</button>
+                <button class="pos-btn selected" data-pos="top-center">↑ Top Centre</button>
+                <button class="pos-btn" data-pos="top-right">↗ Top Right</button>
+                <button class="pos-btn" data-pos="bottom-left">↙ Bot Left</button>
+                <button class="pos-btn" data-pos="bottom-center">↓ Bot Centre</button>
+                <button class="pos-btn" data-pos="bottom-right">↘ Bot Right</button>
+              </div>
+            </div>
+            <div class="option-row">
+              <label>Format</label>
+              <select id="pn-format" class="select-input">
+                <option value="{n}">1</option>
+                <option value="Page {n}">Page 1</option>
+                <option value="{n} / {total}">{n} / {total}</option>
+                <option value="Page {n} of {total}">Page 1 of 10</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label for="pn-start">Start number</label>
+              <input type="number" id="pn-start" class="text-input short-input" value="1" min="1" />
+            </div>
+            <div class="option-row">
+              <label>Number colour</label>
+              <div class="color-row">
+                <input type="color" id="pn-color" value="#000000" class="color-input" />
+                <button class="color-preset active" data-for="pn-color" data-color="#000000" style="background:#000000" title="Black"></button>
+                <button class="color-preset" data-for="pn-color" data-color="#ffffff" style="background:#ffffff;outline:1px solid #cbd5e1" title="White">
+                  <span style="color:#555;font-size:10px;line-height:1">W</span>
+                </button>
+                <button class="color-preset" data-for="pn-color" data-color="#64748b" style="background:#64748b" title="Grey"></button>
+              </div>
+            </div>
+            <div class="option-row">
+              <label for="pn-filename">Output filename</label>
+              <input type="text" id="pn-filename" class="text-input" value="numbered.pdf" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="pn-btn">Add Page Numbers</button>
             </div>
           </div>
-          <div class="option-row">
-            <label>Format</label>
-            <select id="pn-format" class="select-input">
-              <option value="1">1</option>
-              <option value="Page 1">Page 1</option>
-              <option value="1/10">1/10</option>
-              <option value="Page 1 of 10">Page 1 of 10</option>
-            </select>
-          </div>
-          <div class="option-row">
-            <label for="pn-start">Start number</label>
-            <input type="number" id="pn-start" class="text-input short-input" value="1" min="1" />
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="pn-btn">Add Page Numbers</button>
-          </div>
+          <div class="result-area" id="pn-result"></div>
         </div>
-        <div class="result-area" id="pn-result"></div>
+
+        <aside class="tool-preview-panel pn-preview-panel">
+          <div class="mock-page-fixed" id="pn-mock-page">
+            <div class="mock-content-line" style="top:40%"></div>
+            <div class="mock-content-line" style="top:50%"></div>
+            <div class="mock-content-line" style="top:60%"></div>
+            <div class="mock-page-number" id="pn-mock-number">1</div>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <!-- ── 5. Headers & Footers ── -->
+    <!-- ══ 5. HEADERS & FOOTERS (with live mock preview) ══════════════════════ -->
     <section class="tool-view" id="view-headerfooter">
       <div class="tool-header">
-        <h1>Headers &amp; Footers</h1>
-        <p>Add custom text to the top and/or bottom of every page.</p>
-      </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="hf-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">≡</div>
-            <p>Drop a PDF here or <label class="link-label" for="hf-input">browse</label></p>
-            <input type="file" id="hf-input" accept=".pdf" hidden />
-          </div>
+        <span class="tool-header-glyph" aria-hidden="true">≡</span>
+        <div class="tool-header-content">
+          <h1>Headers &amp; Footers</h1>
+          <p>Add custom text to the top and/or bottom of every page.</p>
         </div>
-        <div class="options-card" id="hf-options" style="display:none">
-          <div class="option-row">
-            <label for="hf-header">Header text</label>
-            <input type="text" id="hf-header" class="text-input" placeholder="Text to appear at the top" />
-          </div>
-          <div class="option-row">
-            <label for="hf-footer">Footer text</label>
-            <input type="text" id="hf-footer" class="text-input" placeholder="Text to appear at the bottom" />
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="hf-btn">Apply Header &amp; Footer</button>
-          </div>
-        </div>
-        <div class="result-area" id="hf-result"></div>
       </div>
-    </section>
-
-    <!-- ── 6. Images to PDF ── -->
-    <section class="tool-view" id="view-convert">
-      <div class="tool-header">
-        <h1>Images to PDF</h1>
-        <p>Convert JPG, PNG, or WebP images to a PDF, one image per page.</p>
-      </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="convert-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">⊞</div>
-            <p>Drop images here or <label class="link-label" for="convert-input">browse</label></p>
-            <input type="file" id="convert-input" accept="image/jpeg,image/png,image/webp" multiple hidden />
+      <div class="tool-body tool-body-split">
+        <div class="tool-controls">
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="hf-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">≡</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="hf-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="hf-clear" style="display:none">× Clear</button>
           </div>
-        </div>
-        <ul class="file-list" id="convert-list"></ul>
-        <div class="action-row">
-          <button class="btn btn-primary" id="convert-btn" disabled>Convert to PDF</button>
-        </div>
-        <div class="result-area" id="convert-result"></div>
-      </div>
-    </section>
-
-    <!-- ── 7. Export Text ── -->
-    <section class="tool-view" id="view-extract">
-      <div class="tool-header">
-        <h1>Export Text</h1>
-        <p>Extract all text from a PDF and save as .txt, .md, or .html.</p>
-      </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="extract-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">⇥</div>
-            <p>Drop a PDF here or <label class="link-label" for="extract-input">browse</label></p>
-            <input type="file" id="extract-input" accept=".pdf" hidden />
-          </div>
-        </div>
-        <div class="options-card" id="extract-options" style="display:none">
-          <div class="option-row">
-            <label>Output format</label>
-            <div class="radio-group">
-              <label><input type="radio" name="extract-format" value="txt" checked /> Plain text (.txt)</label>
-              <label><input type="radio" name="extract-format" value="md" /> Markdown (.md)</label>
-              <label><input type="radio" name="extract-format" value="html" /> HTML (.html)</label>
+          <div class="options-card" id="hf-options" style="display:none">
+            <div class="option-row">
+              <label for="hf-header">Header text</label>
+              <input type="text" id="hf-header" class="text-input" placeholder="Text at the top of every page" />
+            </div>
+            <div class="option-row">
+              <label for="hf-footer">Footer text</label>
+              <input type="text" id="hf-footer" class="text-input" placeholder="Text at the bottom of every page" />
+            </div>
+            <div class="option-row">
+              <label for="hf-font-size">Font size</label>
+              <select id="hf-font-size" class="select-input" style="flex:none;width:100px">
+                <option value="8">8 pt</option>
+                <option value="10" selected>10 pt</option>
+                <option value="12">12 pt</option>
+                <option value="14">14 pt</option>
+                <option value="16">16 pt</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label>Text colour</label>
+              <div class="color-row">
+                <input type="color" id="hf-color" value="#000000" class="color-input" />
+                <button class="color-preset active" data-for="hf-color" data-color="#000000" style="background:#000000" title="Black"></button>
+                <button class="color-preset" data-for="hf-color" data-color="#ffffff" style="background:#ffffff;outline:1px solid #cbd5e1" title="White">
+                  <span style="color:#555;font-size:10px;line-height:1">W</span>
+                </button>
+                <button class="color-preset" data-for="hf-color" data-color="#64748b" style="background:#64748b" title="Grey"></button>
+              </div>
+            </div>
+            <div class="option-row">
+              <label for="hf-filename">Output filename</label>
+              <input type="text" id="hf-filename" class="text-input" value="headerfooter.pdf" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="hf-btn">Apply Header &amp; Footer</button>
             </div>
           </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="extract-btn">Export Text</button>
-          </div>
+          <div class="result-area" id="hf-result"></div>
         </div>
-        <div class="result-area" id="extract-result"></div>
+
+        <aside class="tool-preview-panel hf-preview-panel">
+          <div class="mock-page-fixed" id="hf-mock-page">
+            <div class="mock-content-line" style="top:40%"></div>
+            <div class="mock-content-line" style="top:50%"></div>
+            <div class="mock-content-line" style="top:60%"></div>
+            <div id="hf-mock-header"></div>
+            <div id="hf-mock-footer"></div>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <!-- ── 8. Compress ── -->
+    <!-- ══ 6. WATERMARK (with live canvas preview) ════════════════════════════ -->
+    <section class="tool-view" id="view-watermark">
+      <div class="tool-header">
+        <span class="tool-header-glyph" aria-hidden="true">◈</span>
+        <div class="tool-header-content">
+          <h1>Watermark</h1>
+          <p>Add a diagonal text watermark to every page.</p>
+        </div>
+      </div>
+      <div class="tool-body tool-body-split">
+        <div class="tool-controls">
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="wm-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">◈</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="wm-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="wm-clear" style="display:none">× Clear</button>
+          </div>
+          <div class="options-card" id="wm-options" style="display:none">
+            <div class="option-row">
+              <label for="wm-text">Watermark text</label>
+              <input type="text" id="wm-text" class="text-input" value="CONFIDENTIAL" />
+            </div>
+            <div class="option-row">
+              <label for="wm-opacity">Opacity <span id="wm-opacity-val">30%</span></label>
+              <input type="range" id="wm-opacity" min="5" max="80" value="30" class="range-input" />
+            </div>
+            <div class="option-row">
+              <label for="wm-style">Font style</label>
+              <select id="wm-style" class="select-input" style="flex:none;width:130px">
+                <option value="normal" selected>Normal</option>
+                <option value="bold">Bold</option>
+                <option value="italic">Italic</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label>Colour</label>
+              <div class="color-row">
+                <input type="color" id="wm-color" value="#9CA3AF" class="color-input" />
+                <button class="color-preset" data-for="wm-color" data-color="#DC2626" style="background:#DC2626" title="Red"></button>
+                <button class="color-preset active" data-for="wm-color" data-color="#9CA3AF" style="background:#9CA3AF" title="Grey"></button>
+                <button class="color-preset" data-for="wm-color" data-color="#000000" style="background:#000000" title="Black"></button>
+              </div>
+            </div>
+            <div class="option-row">
+              <label for="wm-filename">Output filename</label>
+              <input type="text" id="wm-filename" class="text-input" value="watermarked.pdf" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="wm-btn">Apply Watermark</button>
+            </div>
+          </div>
+          <div class="result-area" id="wm-result"></div>
+        </div>
+
+        <aside class="tool-preview-panel">
+          <div class="preview-card">
+            <div class="preview-card-title">Preview · Page 1</div>
+            <div class="preview-canvas-wrap" id="wm-canvas-wrap">
+              <p class="preview-placeholder" id="wm-preview-placeholder">Upload a PDF to see preview</p>
+              <canvas id="wm-preview-canvas" style="display:none"></canvas>
+              <div class="wm-overlay" id="wm-overlay">CONFIDENTIAL</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ══ 7. COMPRESS ════════════════════════════════════════════════════════ -->
     <section class="tool-view" id="view-compress">
       <div class="tool-header">
-        <h1>Compress PDF</h1>
-        <p>Re-serialise the PDF with object streams to reduce file size.</p>
+        <span class="tool-header-glyph" aria-hidden="true">⊡</span>
+        <div class="tool-header-content">
+          <h1>Compress PDF</h1>
+          <p>Re-serialise the PDF with object streams to reduce file size.</p>
+        </div>
       </div>
       <div class="tool-body">
-        <div class="drop-zone" id="compress-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">⊡</div>
-            <p>Drop a PDF here or <label class="link-label" for="compress-input">browse</label></p>
-            <input type="file" id="compress-input" accept=".pdf" hidden />
+        <div class="drop-zone-wrap">
+          <div class="drop-zone" id="compress-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">⊡</div>
+              <p>Drop a PDF here or <span class="link-label">browse</span></p>
+              <span class="drop-hint">Single PDF file</span>
+              <input type="file" id="compress-input" accept=".pdf" style="display:none" />
+            </div>
           </div>
+          <button class="btn-clear-file" id="compress-clear" style="display:none">× Clear</button>
         </div>
         <div class="options-card" id="compress-options" style="display:none">
+          <div class="option-row">
+            <label>Original size</label>
+            <span id="compress-size-info" style="padding-top:6px;color:var(--text-secondary);font-size:13px">—</span>
+          </div>
+          <div class="option-row">
+            <label for="compress-target">Target reduction <span id="compress-target-val">30%</span></label>
+            <input type="range" id="compress-target" min="10" max="70" value="30" step="5" class="range-input" />
+          </div>
+          <div class="option-row">
+            <label for="compress-filename">Output filename</label>
+            <input type="text" id="compress-filename" class="text-input" value="compressed.pdf" />
+          </div>
           <div class="action-row">
             <button class="btn btn-primary" id="compress-btn">Compress PDF</button>
           </div>
@@ -339,166 +490,110 @@
       </div>
     </section>
 
-    <!-- ── 9. Watermark ── -->
-    <section class="tool-view" id="view-watermark">
-      <div class="tool-header">
-        <h1>Watermark</h1>
-        <p>Add a diagonal text watermark to every page.</p>
-      </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="wm-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">◈</div>
-            <p>Drop a PDF here or <label class="link-label" for="wm-input">browse</label></p>
-            <input type="file" id="wm-input" accept=".pdf" hidden />
-          </div>
-        </div>
-        <div class="options-card" id="wm-options" style="display:none">
-          <div class="option-row">
-            <label for="wm-text">Watermark text</label>
-            <input type="text" id="wm-text" class="text-input" placeholder="e.g. CONFIDENTIAL" value="CONFIDENTIAL" />
-          </div>
-          <div class="option-row">
-            <label for="wm-opacity">Opacity <span id="wm-opacity-val">30%</span></label>
-            <input type="range" id="wm-opacity" min="5" max="80" value="30" class="range-input" />
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="wm-btn">Apply Watermark</button>
-          </div>
-        </div>
-        <div class="result-area" id="wm-result"></div>
-      </div>
-    </section>
-
-    <!-- ── 10. Redact ── -->
+    <!-- ══ 8. REDACT ══════════════════════════════════════════════════════════ -->
     <section class="tool-view" id="view-redact">
       <div class="tool-header">
-        <h1>Redact</h1>
-        <p>Black out text containing any of the specified terms.</p>
+        <span class="tool-header-glyph" aria-hidden="true">▬</span>
+        <div class="tool-header-content">
+          <h1>Redact</h1>
+          <p>Draw rectangles over sensitive areas, navigate pages, then apply and download.</p>
+        </div>
       </div>
-      <div class="tool-body">
-        <div class="drop-zone" id="redact-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">▬</div>
-            <p>Drop a PDF here or <label class="link-label" for="redact-input">browse</label></p>
-            <input type="file" id="redact-input" accept=".pdf" hidden />
+      <div class="tool-body tool-body-split redact-layout">
+
+        <!-- LEFT: controls -->
+        <div class="tool-controls">
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="redact-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">▬</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="redact-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="redact-clear" style="display:none">× Clear</button>
           </div>
+
+          <!-- Page navigation (shown after upload) -->
+          <div class="redact-nav" id="redact-nav" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="redact-prev">← Prev</button>
+            <span id="redact-page-label">Page 1 of 1</span>
+            <button class="btn btn-ghost btn-sm" id="redact-next">Next →</button>
+          </div>
+
+          <!-- Options (shown after upload) -->
+          <div class="options-card" id="redact-options" style="display:none">
+            <div class="option-row">
+              <label>Redact style</label>
+              <div class="redact-style-toggle">
+                <button class="btn redact-style-btn active" data-style="black" id="redact-style-black">■ Black box</button>
+                <button class="btn redact-style-btn" data-style="pixelate" id="redact-style-pixelate">⊞ Pixelate</button>
+              </div>
+            </div>
+            <div class="option-row">
+              <label>Marked areas <span id="redact-count" style="color:var(--text-secondary);font-weight:400"></span></label>
+              <div id="redact-rects-list" class="redact-rects-list">
+                <p class="redact-empty-hint" id="redact-empty-hint">Draw rectangles on the canvas →</p>
+              </div>
+            </div>
+            <div class="option-row">
+              <label for="redact-filename">Output filename</label>
+              <input type="text" id="redact-filename" class="text-input" value="redacted.pdf" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="redact-btn">Apply &amp; Download</button>
+            </div>
+          </div>
+
+          <div class="result-area" id="redact-result"></div>
         </div>
-        <div class="options-card" id="redact-options" style="display:none">
-          <div class="option-row">
-            <label for="redact-terms">Terms to redact <small>(one per line)</small></label>
-            <textarea id="redact-terms" class="textarea-input" rows="5" placeholder="John Smith&#10;123 Main St&#10;SSN"></textarea>
+
+        <!-- RIGHT: canvas -->
+        <aside class="tool-preview-panel redact-canvas-panel">
+          <div class="preview-card" id="redact-canvas-card">
+            <p class="preview-placeholder" id="redact-canvas-placeholder">Upload a PDF to start drawing redactions</p>
+            <div class="redact-canvas-wrap" id="redact-canvas-wrap" style="display:none">
+              <canvas id="redact-canvas"></canvas>
+              <div id="redact-overlays"></div>
+            </div>
           </div>
-          <div class="action-row">
-            <button class="btn btn-primary" id="redact-btn">Redact PDF</button>
-          </div>
-        </div>
-        <div class="result-area" id="redact-result"></div>
+        </aside>
+
       </div>
     </section>
 
-    <!-- ── 11. E-Signature ── -->
-    <section class="tool-view" id="view-sign">
-      <div class="tool-header">
-        <h1>E-Signature</h1>
-        <p>Draw or type a signature and stamp it onto a PDF page.</p>
-      </div>
-      <div class="tool-body">
-        <div class="sign-tabs">
-          <button class="sign-tab active" data-tab="stamp">Stamp Signature</button>
-          <button class="sign-tab" data-tab="request">Request Signature <span class="badge-amber small">AI</span></button>
-        </div>
-
-        <!-- Stamp tab -->
-        <div class="sign-tab-content active" id="stamp-tab">
-          <div class="drop-zone" id="sign-drop">
-            <div class="drop-zone-inner">
-              <div class="drop-icon">✎</div>
-              <p>Drop a PDF here or <label class="link-label" for="sign-input">browse</label></p>
-              <input type="file" id="sign-input" accept=".pdf" hidden />
-            </div>
-          </div>
-          <div class="options-card" id="sign-options" style="display:none">
-            <div class="option-row">
-              <label>Signature</label>
-              <div class="sig-tabs">
-                <button class="sig-tab active" data-sigtab="draw">Draw</button>
-                <button class="sig-tab" data-sigtab="type">Type</button>
-              </div>
-            </div>
-            <div class="sig-tab-content active" id="sig-draw">
-              <canvas id="sig-canvas" width="400" height="120"></canvas>
-              <div class="canvas-actions">
-                <button class="btn btn-ghost" id="sig-clear">Clear</button>
-              </div>
-            </div>
-            <div class="sig-tab-content" id="sig-type">
-              <input type="text" id="sig-typed" class="text-input sig-text" placeholder="Your name" />
-              <select id="sig-font" class="select-input">
-                <option value="cursive">Script</option>
-                <option value="serif">Serif</option>
-                <option value="sans-serif">Sans-serif</option>
-              </select>
-            </div>
-            <div class="option-row">
-              <label for="sign-page">Place on page</label>
-              <input type="number" id="sign-page" class="text-input short-input" value="1" min="1" />
-            </div>
-            <div class="action-row">
-              <button class="btn btn-primary" id="sign-btn">Apply Signature</button>
-            </div>
-          </div>
-          <div class="result-area" id="sign-result"></div>
-        </div>
-
-        <!-- Request tab -->
-        <div class="sign-tab-content" id="request-tab">
-          <div class="options-card">
-            <div class="option-row">
-              <label for="req-sender">Your name</label>
-              <input type="text" id="req-sender" class="text-input" placeholder="e.g. Alice Johnson" />
-            </div>
-            <div class="option-row">
-              <label for="req-recipient">Recipient name</label>
-              <input type="text" id="req-recipient" class="text-input" placeholder="e.g. Bob Smith" />
-            </div>
-            <div class="option-row">
-              <label for="req-email">Recipient email</label>
-              <input type="email" id="req-email" class="text-input" placeholder="bob@example.com" />
-            </div>
-            <div class="option-row">
-              <label for="req-doc">Document name</label>
-              <input type="text" id="req-doc" class="text-input" placeholder="e.g. NDA Agreement" />
-            </div>
-            <div class="action-row">
-              <button class="btn btn-primary" id="req-btn">Draft Email with AI</button>
-            </div>
-          </div>
-          <div class="result-area" id="req-result"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 12. Form Filler ── -->
+    <!-- ══ 9. FORM FILLER ═════════════════════════════════════════════════════ -->
     <section class="tool-view" id="view-form">
       <div class="tool-header">
-        <h1>Form Filler</h1>
-        <p>Detect interactive form fields in a PDF and fill them programmatically.</p>
+        <span class="tool-header-glyph" aria-hidden="true">⊟</span>
+        <div class="tool-header-content">
+          <h1>Form Filler</h1>
+          <p>Detect interactive form fields in a PDF and fill them in the browser.</p>
+        </div>
       </div>
       <div class="tool-body">
-        <div class="drop-zone" id="form-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">⊟</div>
-            <p>Drop a PDF here or <label class="link-label" for="form-input">browse</label></p>
-            <input type="file" id="form-input" accept=".pdf" hidden />
+        <div class="drop-zone-wrap">
+          <div class="drop-zone" id="form-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">⊟</div>
+              <p>Drop a PDF here or <span class="link-label">browse</span></p>
+              <span class="drop-hint">PDF with interactive form fields</span>
+              <input type="file" id="form-input" accept=".pdf" style="display:none" />
+            </div>
           </div>
+          <button class="btn-clear-file" id="form-clear" style="display:none">× Clear</button>
         </div>
         <div id="form-fields-area" style="display:none">
           <div class="fields-header">
             <p id="form-field-count"></p>
           </div>
           <div id="form-fields-list" class="form-fields-grid"></div>
-          <div class="action-row">
+          <div class="filename-row">
+            <label for="form-filename">Output filename</label>
+            <input type="text" id="form-filename" class="text-input" value="filled.pdf" />
+          </div>
+          <div class="action-row" style="padding-top:12px">
             <button class="btn btn-primary" id="form-fill-btn">Fill &amp; Download</button>
           </div>
         </div>
@@ -506,23 +601,31 @@
       </div>
     </section>
 
-    <!-- ── 13. PDF Info ── -->
+    <!-- ══ 10. PDF INFO ═══════════════════════════════════════════════════════ -->
     <section class="tool-view" id="view-info">
       <div class="tool-header">
-        <h1>PDF Info</h1>
-        <p>Inspect page count, dimensions, rotation, and document metadata.</p>
+        <span class="tool-header-glyph" aria-hidden="true">ℹ</span>
+        <div class="tool-header-content">
+          <h1>PDF Info</h1>
+          <p>Inspect page count, file size, dimensions, rotation, and document metadata.</p>
+        </div>
       </div>
       <div class="tool-body">
-        <div class="drop-zone" id="info-drop">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">ℹ</div>
-            <p>Drop a PDF here or <label class="link-label" for="info-input">browse</label></p>
-            <input type="file" id="info-input" accept=".pdf" hidden />
+        <div class="drop-zone-wrap">
+          <div class="drop-zone" id="info-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">ℹ</div>
+              <p>Drop a PDF here or <span class="link-label">browse</span></p>
+              <span class="drop-hint">Single PDF file</span>
+              <input type="file" id="info-input" accept=".pdf" style="display:none" />
+            </div>
           </div>
+          <button class="btn-clear-file" id="info-clear" style="display:none">× Clear</button>
         </div>
+        <div class="result-area" id="info-status"></div>
         <div id="info-results" style="display:none">
           <div class="info-grid" id="info-meta"></div>
-          <h3 class="section-label">Pages</h3>
+          <h3 class="section-label" style="margin-top:8px">Pages</h3>
           <div class="info-pages-table">
             <table id="info-pages-tbl">
               <thead><tr><th>Page</th><th>Width (pt)</th><th>Height (pt)</th><th>Rotation</th></tr></thead>
@@ -530,11 +633,15 @@
             </table>
           </div>
         </div>
-        <div class="result-area" id="info-result"></div>
       </div>
     </section>
+
   </main>
 
+  <!-- CDN libraries — loaded before app.js so globals are available -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>
