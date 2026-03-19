@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PageHub — PDF Toolkit</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">PageHub</span>
+      </div>
+      <p class="logo-tagline">PDF Toolkit</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <span class="nav-group-label">Organise</span>
+        <button class="nav-item active" data-tool="merge">
+          <span class="nav-icon">⊕</span> Merge PDFs
+        </button>
+        <button class="nav-item" data-tool="split">
+          <span class="nav-icon">⊖</span> Split PDF
+        </button>
+        <button class="nav-item" data-tool="rotate">
+          <span class="nav-icon">↻</span> Rotate Pages
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group-label">Annotate</span>
+        <button class="nav-item" data-tool="pagenumbers">
+          <span class="nav-icon">#</span> Page Numbers
+        </button>
+        <button class="nav-item" data-tool="headerfooter">
+          <span class="nav-icon">≡</span> Headers &amp; Footers
+        </button>
+        <button class="nav-item" data-tool="watermark">
+          <span class="nav-icon">◈</span> Watermark
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group-label">Convert</span>
+        <button class="nav-item" data-tool="convert">
+          <span class="nav-icon">⊞</span> Images to PDF
+        </button>
+        <button class="nav-item" data-tool="extract">
+          <span class="nav-icon">⇥</span> Export Text
+        </button>
+        <button class="nav-item" data-tool="compress">
+          <span class="nav-icon">⊡</span> Compress PDF
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group-label">Security &amp; Forms</span>
+        <button class="nav-item" data-tool="redact">
+          <span class="nav-icon">▬</span> Redact
+        </button>
+        <button class="nav-item" data-tool="sign">
+          <span class="nav-icon">✎</span> E-Signature
+        </button>
+        <button class="nav-item" data-tool="form">
+          <span class="nav-icon">⊟</span> Form Filler
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group-label">Analyse</span>
+        <button class="nav-item" data-tool="info">
+          <span class="nav-icon">ℹ</span> PDF Info
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="badge-amber">13 Tools</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+    <!-- ── 1. Merge ── -->
+    <section class="tool-view active" id="view-merge">
+      <div class="tool-header">
+        <h1>Merge PDFs</h1>
+        <p>Upload multiple PDFs, reorder them, then merge into one file.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="merge-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">⊕</div>
+            <p>Drop PDF files here or <label class="link-label" for="merge-input">browse</label></p>
+            <input type="file" id="merge-input" accept=".pdf" multiple hidden />
+          </div>
+        </div>
+        <ul class="file-list sortable" id="merge-list"></ul>
+        <div class="action-row">
+          <button class="btn btn-primary" id="merge-btn" disabled>Merge PDFs</button>
+        </div>
+        <div class="result-area" id="merge-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 2. Split ── -->
+    <section class="tool-view" id="view-split">
+      <div class="tool-header">
+        <h1>Split PDF</h1>
+        <p>Extract all pages as individual PDFs in a zip, or extract a custom page range.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="split-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">⊖</div>
+            <p>Drop a PDF here or <label class="link-label" for="split-input">browse</label></p>
+            <input type="file" id="split-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="split-options" style="display:none">
+          <div class="option-row">
+            <label>Mode</label>
+            <div class="radio-group">
+              <label><input type="radio" name="split-mode" value="all" checked /> All pages</label>
+              <label><input type="radio" name="split-mode" value="range" /> Custom range</label>
+            </div>
+          </div>
+          <div class="option-row" id="split-range-row" style="display:none">
+            <label for="split-range">Page range</label>
+            <input type="text" id="split-range" class="text-input" placeholder="e.g. 1-3, 5, 7-9" />
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="split-btn">Split PDF</button>
+          </div>
+        </div>
+        <div class="result-area" id="split-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 3. Rotate ── -->
+    <section class="tool-view" id="view-rotate">
+      <div class="tool-header">
+        <h1>Rotate Pages</h1>
+        <p>Rotate all, odd, even, or specific pages by 90, 180, or 270 degrees.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="rotate-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">↻</div>
+            <p>Drop a PDF here or <label class="link-label" for="rotate-input">browse</label></p>
+            <input type="file" id="rotate-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="rotate-options" style="display:none">
+          <div class="option-row">
+            <label>Apply to</label>
+            <div class="radio-group">
+              <label><input type="radio" name="rotate-target" value="all" checked /> All pages</label>
+              <label><input type="radio" name="rotate-target" value="odd" /> Odd pages</label>
+              <label><input type="radio" name="rotate-target" value="even" /> Even pages</label>
+              <label><input type="radio" name="rotate-target" value="custom" /> Custom range</label>
+            </div>
+          </div>
+          <div class="option-row" id="rotate-range-row" style="display:none">
+            <label for="rotate-range">Page range</label>
+            <input type="text" id="rotate-range" class="text-input" placeholder="e.g. 1-3, 5" />
+          </div>
+          <div class="option-row">
+            <label>Angle</label>
+            <div class="radio-group">
+              <label><input type="radio" name="rotate-angle" value="90" checked /> 90°</label>
+              <label><input type="radio" name="rotate-angle" value="180" /> 180°</label>
+              <label><input type="radio" name="rotate-angle" value="270" /> 270°</label>
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="rotate-btn">Rotate Pages</button>
+          </div>
+        </div>
+        <div class="result-area" id="rotate-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 4. Page Numbers ── -->
+    <section class="tool-view" id="view-pagenumbers">
+      <div class="tool-header">
+        <h1>Page Numbers</h1>
+        <p>Add page numbers at any corner or centre, with multiple format options.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="pn-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">#</div>
+            <p>Drop a PDF here or <label class="link-label" for="pn-input">browse</label></p>
+            <input type="file" id="pn-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="pn-options" style="display:none">
+          <div class="option-row">
+            <label>Position</label>
+            <div class="position-grid">
+              <button class="pos-btn" data-pos="top-left">↖ Top Left</button>
+              <button class="pos-btn selected" data-pos="top-center">↑ Top Centre</button>
+              <button class="pos-btn" data-pos="top-right">↗ Top Right</button>
+              <button class="pos-btn" data-pos="bottom-left">↙ Bot Left</button>
+              <button class="pos-btn" data-pos="bottom-center">↓ Bot Centre</button>
+              <button class="pos-btn" data-pos="bottom-right">↘ Bot Right</button>
+            </div>
+          </div>
+          <div class="option-row">
+            <label>Format</label>
+            <select id="pn-format" class="select-input">
+              <option value="1">1</option>
+              <option value="Page 1">Page 1</option>
+              <option value="1/10">1/10</option>
+              <option value="Page 1 of 10">Page 1 of 10</option>
+            </select>
+          </div>
+          <div class="option-row">
+            <label for="pn-start">Start number</label>
+            <input type="number" id="pn-start" class="text-input short-input" value="1" min="1" />
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="pn-btn">Add Page Numbers</button>
+          </div>
+        </div>
+        <div class="result-area" id="pn-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 5. Headers & Footers ── -->
+    <section class="tool-view" id="view-headerfooter">
+      <div class="tool-header">
+        <h1>Headers &amp; Footers</h1>
+        <p>Add custom text to the top and/or bottom of every page.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="hf-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">≡</div>
+            <p>Drop a PDF here or <label class="link-label" for="hf-input">browse</label></p>
+            <input type="file" id="hf-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="hf-options" style="display:none">
+          <div class="option-row">
+            <label for="hf-header">Header text</label>
+            <input type="text" id="hf-header" class="text-input" placeholder="Text to appear at the top" />
+          </div>
+          <div class="option-row">
+            <label for="hf-footer">Footer text</label>
+            <input type="text" id="hf-footer" class="text-input" placeholder="Text to appear at the bottom" />
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="hf-btn">Apply Header &amp; Footer</button>
+          </div>
+        </div>
+        <div class="result-area" id="hf-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 6. Images to PDF ── -->
+    <section class="tool-view" id="view-convert">
+      <div class="tool-header">
+        <h1>Images to PDF</h1>
+        <p>Convert JPG, PNG, or WebP images to a PDF, one image per page.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="convert-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">⊞</div>
+            <p>Drop images here or <label class="link-label" for="convert-input">browse</label></p>
+            <input type="file" id="convert-input" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          </div>
+        </div>
+        <ul class="file-list" id="convert-list"></ul>
+        <div class="action-row">
+          <button class="btn btn-primary" id="convert-btn" disabled>Convert to PDF</button>
+        </div>
+        <div class="result-area" id="convert-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 7. Export Text ── -->
+    <section class="tool-view" id="view-extract">
+      <div class="tool-header">
+        <h1>Export Text</h1>
+        <p>Extract all text from a PDF and save as .txt, .md, or .html.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="extract-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">⇥</div>
+            <p>Drop a PDF here or <label class="link-label" for="extract-input">browse</label></p>
+            <input type="file" id="extract-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="extract-options" style="display:none">
+          <div class="option-row">
+            <label>Output format</label>
+            <div class="radio-group">
+              <label><input type="radio" name="extract-format" value="txt" checked /> Plain text (.txt)</label>
+              <label><input type="radio" name="extract-format" value="md" /> Markdown (.md)</label>
+              <label><input type="radio" name="extract-format" value="html" /> HTML (.html)</label>
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="extract-btn">Export Text</button>
+          </div>
+        </div>
+        <div class="result-area" id="extract-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 8. Compress ── -->
+    <section class="tool-view" id="view-compress">
+      <div class="tool-header">
+        <h1>Compress PDF</h1>
+        <p>Re-serialise the PDF with object streams to reduce file size.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="compress-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">⊡</div>
+            <p>Drop a PDF here or <label class="link-label" for="compress-input">browse</label></p>
+            <input type="file" id="compress-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="compress-options" style="display:none">
+          <div class="action-row">
+            <button class="btn btn-primary" id="compress-btn">Compress PDF</button>
+          </div>
+        </div>
+        <div class="result-area" id="compress-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 9. Watermark ── -->
+    <section class="tool-view" id="view-watermark">
+      <div class="tool-header">
+        <h1>Watermark</h1>
+        <p>Add a diagonal text watermark to every page.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="wm-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">◈</div>
+            <p>Drop a PDF here or <label class="link-label" for="wm-input">browse</label></p>
+            <input type="file" id="wm-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="wm-options" style="display:none">
+          <div class="option-row">
+            <label for="wm-text">Watermark text</label>
+            <input type="text" id="wm-text" class="text-input" placeholder="e.g. CONFIDENTIAL" value="CONFIDENTIAL" />
+          </div>
+          <div class="option-row">
+            <label for="wm-opacity">Opacity <span id="wm-opacity-val">30%</span></label>
+            <input type="range" id="wm-opacity" min="5" max="80" value="30" class="range-input" />
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="wm-btn">Apply Watermark</button>
+          </div>
+        </div>
+        <div class="result-area" id="wm-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 10. Redact ── -->
+    <section class="tool-view" id="view-redact">
+      <div class="tool-header">
+        <h1>Redact</h1>
+        <p>Black out text containing any of the specified terms.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="redact-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">▬</div>
+            <p>Drop a PDF here or <label class="link-label" for="redact-input">browse</label></p>
+            <input type="file" id="redact-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div class="options-card" id="redact-options" style="display:none">
+          <div class="option-row">
+            <label for="redact-terms">Terms to redact <small>(one per line)</small></label>
+            <textarea id="redact-terms" class="textarea-input" rows="5" placeholder="John Smith&#10;123 Main St&#10;SSN"></textarea>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="redact-btn">Redact PDF</button>
+          </div>
+        </div>
+        <div class="result-area" id="redact-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 11. E-Signature ── -->
+    <section class="tool-view" id="view-sign">
+      <div class="tool-header">
+        <h1>E-Signature</h1>
+        <p>Draw or type a signature and stamp it onto a PDF page.</p>
+      </div>
+      <div class="tool-body">
+        <div class="sign-tabs">
+          <button class="sign-tab active" data-tab="stamp">Stamp Signature</button>
+          <button class="sign-tab" data-tab="request">Request Signature <span class="badge-amber small">AI</span></button>
+        </div>
+
+        <!-- Stamp tab -->
+        <div class="sign-tab-content active" id="stamp-tab">
+          <div class="drop-zone" id="sign-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">✎</div>
+              <p>Drop a PDF here or <label class="link-label" for="sign-input">browse</label></p>
+              <input type="file" id="sign-input" accept=".pdf" hidden />
+            </div>
+          </div>
+          <div class="options-card" id="sign-options" style="display:none">
+            <div class="option-row">
+              <label>Signature</label>
+              <div class="sig-tabs">
+                <button class="sig-tab active" data-sigtab="draw">Draw</button>
+                <button class="sig-tab" data-sigtab="type">Type</button>
+              </div>
+            </div>
+            <div class="sig-tab-content active" id="sig-draw">
+              <canvas id="sig-canvas" width="400" height="120"></canvas>
+              <div class="canvas-actions">
+                <button class="btn btn-ghost" id="sig-clear">Clear</button>
+              </div>
+            </div>
+            <div class="sig-tab-content" id="sig-type">
+              <input type="text" id="sig-typed" class="text-input sig-text" placeholder="Your name" />
+              <select id="sig-font" class="select-input">
+                <option value="cursive">Script</option>
+                <option value="serif">Serif</option>
+                <option value="sans-serif">Sans-serif</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label for="sign-page">Place on page</label>
+              <input type="number" id="sign-page" class="text-input short-input" value="1" min="1" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="sign-btn">Apply Signature</button>
+            </div>
+          </div>
+          <div class="result-area" id="sign-result"></div>
+        </div>
+
+        <!-- Request tab -->
+        <div class="sign-tab-content" id="request-tab">
+          <div class="options-card">
+            <div class="option-row">
+              <label for="req-sender">Your name</label>
+              <input type="text" id="req-sender" class="text-input" placeholder="e.g. Alice Johnson" />
+            </div>
+            <div class="option-row">
+              <label for="req-recipient">Recipient name</label>
+              <input type="text" id="req-recipient" class="text-input" placeholder="e.g. Bob Smith" />
+            </div>
+            <div class="option-row">
+              <label for="req-email">Recipient email</label>
+              <input type="email" id="req-email" class="text-input" placeholder="bob@example.com" />
+            </div>
+            <div class="option-row">
+              <label for="req-doc">Document name</label>
+              <input type="text" id="req-doc" class="text-input" placeholder="e.g. NDA Agreement" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="req-btn">Draft Email with AI</button>
+            </div>
+          </div>
+          <div class="result-area" id="req-result"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 12. Form Filler ── -->
+    <section class="tool-view" id="view-form">
+      <div class="tool-header">
+        <h1>Form Filler</h1>
+        <p>Detect interactive form fields in a PDF and fill them programmatically.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="form-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">⊟</div>
+            <p>Drop a PDF here or <label class="link-label" for="form-input">browse</label></p>
+            <input type="file" id="form-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div id="form-fields-area" style="display:none">
+          <div class="fields-header">
+            <p id="form-field-count"></p>
+          </div>
+          <div id="form-fields-list" class="form-fields-grid"></div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="form-fill-btn">Fill &amp; Download</button>
+          </div>
+        </div>
+        <div class="result-area" id="form-result"></div>
+      </div>
+    </section>
+
+    <!-- ── 13. PDF Info ── -->
+    <section class="tool-view" id="view-info">
+      <div class="tool-header">
+        <h1>PDF Info</h1>
+        <p>Inspect page count, dimensions, rotation, and document metadata.</p>
+      </div>
+      <div class="tool-body">
+        <div class="drop-zone" id="info-drop">
+          <div class="drop-zone-inner">
+            <div class="drop-icon">ℹ</div>
+            <p>Drop a PDF here or <label class="link-label" for="info-input">browse</label></p>
+            <input type="file" id="info-input" accept=".pdf" hidden />
+          </div>
+        </div>
+        <div id="info-results" style="display:none">
+          <div class="info-grid" id="info-meta"></div>
+          <h3 class="section-label">Pages</h3>
+          <div class="info-pages-table">
+            <table id="info-pages-tbl">
+              <thead><tr><th>Page</th><th>Width (pt)</th><th>Height (pt)</th><th>Rotation</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="result-area" id="info-result"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
