@@ -22,8 +22,13 @@
 
     <nav class="sidebar-nav">
       <div class="nav-group">
+        <button class="nav-item active" data-tool="home">
+          <span class="nav-icon">⌂</span>Home
+        </button>
+      </div>
+      <div class="nav-group">
         <span class="nav-group-label">Organise</span>
-        <button class="nav-item active" data-tool="merge">
+        <button class="nav-item" data-tool="merge">
           <span class="nav-icon">⊕</span>Merge PDFs
         </button>
         <button class="nav-item" data-tool="split">
@@ -31,6 +36,9 @@
         </button>
         <button class="nav-item" data-tool="rotate">
           <span class="nav-icon">↻</span>Rotate Pages
+        </button>
+        <button class="nav-item" data-tool="organiser">
+          <span class="nav-icon">⊞</span>Page Organiser
         </button>
       </div>
 
@@ -44,6 +52,9 @@
         </button>
         <button class="nav-item" data-tool="watermark">
           <span class="nav-icon">◈</span>Watermark
+        </button>
+        <button class="nav-item" data-tool="edit">
+          <span class="nav-icon">✏</span>Edit Text
         </button>
       </div>
 
@@ -61,6 +72,9 @@
         </button>
         <button class="nav-item" data-tool="form">
           <span class="nav-icon">⊟</span>Form Filler
+        </button>
+        <button class="nav-item" data-tool="sign">
+          <span class="nav-icon">✒</span>Sign PDF
         </button>
       </div>
 
@@ -87,15 +101,40 @@
     <button class="theme-toggle" id="theme-toggle">🌙 Dark mode</button>
 
     <div class="sidebar-footer">
-      <span class="badge-amber">10 Tools</span>
+      <span class="badge-amber">13 Tools</span>
     </div>
   </aside>
 
   <!-- ─── Main ─────────────────────────────────────────────────────────────── -->
   <main class="main">
 
+    <!-- ══ HOME ══════════════════════════════════════════════════════════════ -->
+    <section class="tool-view active" id="view-home">
+      <div class="home-inner">
+        <div class="home-header">
+          <img src="/logos/pagehub_logo_white.webp" alt="PageHub" class="home-logo" />
+          <p class="home-subtitle">13 Tools. All client-side. Files never leave your machine.</p>
+        </div>
+        <div class="home-grid">
+          <button class="home-card" data-tool="merge"><span class="home-card-icon">⊕</span><span class="home-card-name">Merge PDFs</span></button>
+          <button class="home-card" data-tool="split"><span class="home-card-icon">⊖</span><span class="home-card-name">Split PDF</span></button>
+          <button class="home-card" data-tool="rotate"><span class="home-card-icon">↺</span><span class="home-card-name">Rotate Pages</span></button>
+          <button class="home-card" data-tool="pagenumbers"><span class="home-card-icon">#</span><span class="home-card-name">Page Numbers</span></button>
+          <button class="home-card" data-tool="headerfooter"><span class="home-card-icon">≡</span><span class="home-card-name">Headers &amp; Footers</span></button>
+          <button class="home-card" data-tool="watermark"><span class="home-card-icon">◇</span><span class="home-card-name">Watermark</span></button>
+          <button class="home-card" data-tool="compress"><span class="home-card-icon">⊡</span><span class="home-card-name">Compress PDF</span></button>
+          <button class="home-card" data-tool="redact"><span class="home-card-icon">▬</span><span class="home-card-name">Redact</span></button>
+          <button class="home-card" data-tool="form"><span class="home-card-icon">⊟</span><span class="home-card-name">Form Filler</span></button>
+          <button class="home-card" data-tool="info"><span class="home-card-icon">ℹ</span><span class="home-card-name">PDF Info</span></button>
+          <button class="home-card" data-tool="organiser"><span class="home-card-icon">⊞</span><span class="home-card-name">Page Organiser</span></button>
+          <button class="home-card" data-tool="sign"><span class="home-card-icon">✒</span><span class="home-card-name">Sign PDF</span></button>
+          <button class="home-card" data-tool="edit"><span class="home-card-icon">✏</span><span class="home-card-name">Edit Text</span></button>
+        </div>
+      </div>
+    </section>
+
     <!-- ══ 1. MERGE ══════════════════════════════════════════════════════════ -->
-    <section class="tool-view active" id="view-merge">
+    <section class="tool-view" id="view-merge">
       <div class="tool-header">
         <span class="tool-header-glyph" aria-hidden="true">⊕</span>
         <div class="tool-header-content">
@@ -108,7 +147,7 @@
           <div class="drop-zone" id="merge-drop">
             <div class="drop-zone-inner">
               <div class="drop-icon">⊕</div>
-              <p>Drop PDF files here or <span class="link-label">browse</span></p>
+              <p>Drop a PDF here or <span class="link-label">browse</span></p>
               <span class="drop-hint">Accepts multiple files — drag to reorder</span>
               <input type="file" id="merge-input" accept=".pdf" multiple style="display:none" />
             </div>
@@ -647,6 +686,238 @@
             </table>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ══ 11. PAGE ORGANISER ════════════════════════════════════════════════ -->
+    <section class="tool-view" id="view-organiser">
+      <div class="tool-header">
+        <span class="tool-header-glyph" aria-hidden="true">⊞</span>
+        <div class="tool-header-content">
+          <h1>Page Organiser</h1>
+          <p>Reorder, rotate, duplicate or delete pages — then download your organised PDF.</p>
+        </div>
+      </div>
+      <div class="tool-body organiser-body">
+        <div class="drop-zone-wrap">
+          <div class="drop-zone" id="organiser-drop">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">⊞</div>
+              <p>Drop a PDF here or <span class="link-label">browse</span></p>
+              <span class="drop-hint">Single PDF file</span>
+              <input type="file" id="organiser-input" accept=".pdf" style="display:none" />
+            </div>
+          </div>
+          <button class="btn-clear-file" id="organiser-clear" style="display:none">× Clear</button>
+        </div>
+        <div id="organiser-loading" style="display:none">
+          <div class="loading-card"><div class="spinner"></div>Rendering thumbnails…</div>
+        </div>
+        <div id="organiser-controls" style="display:none">
+          <div class="organiser-toolbar">
+            <button class="btn btn-ghost btn-sm" id="organiser-insert-pdf">+ Insert PDF Pages</button>
+            <input type="file" id="organiser-insert-input" accept=".pdf" style="display:none" />
+            <button class="btn btn-amber" id="organiser-download" disabled>Download PDF</button>
+          </div>
+          <div id="organiser-insert-ui" style="display:none">
+            <div class="organiser-insert-panel">
+              <label for="organiser-insert-after">Insert after page:</label>
+              <select id="organiser-insert-after" class="select-input organiser-insert-select"></select>
+              <button class="btn btn-primary btn-sm" id="organiser-insert-confirm">Insert Pages</button>
+              <button class="btn btn-ghost btn-sm" id="organiser-insert-cancel">Cancel</button>
+            </div>
+          </div>
+          <div class="filename-row">
+            <label for="organiser-filename">Output filename</label>
+            <input type="text" id="organiser-filename" class="text-input" value="organised.pdf" />
+          </div>
+          <div class="organiser-grid" id="organiser-grid"></div>
+        </div>
+        <div class="result-area" id="organiser-result"></div>
+      </div>
+    </section>
+
+    <!-- ══ SIGN PDF ════════════════════════════════════════════════════════════ -->
+    <section class="tool-view" id="view-sign">
+      <div class="tool-header">
+        <span class="tool-header-glyph" aria-hidden="true">✒</span>
+        <div class="tool-header-content">
+          <h1>Sign PDF</h1>
+          <p>Upload a PDF, place your signature image on any page, then download the signed file.</p>
+        </div>
+      </div>
+      <div class="tool-body tool-body-split sign-layout">
+
+        <!-- LEFT: controls -->
+        <div class="tool-controls">
+
+          <!-- Step 1: PDF upload -->
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="sign-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">✒</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="sign-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="sign-clear" style="display:none">× Clear</button>
+          </div>
+
+          <!-- Page navigation -->
+          <div id="sign-page-nav" class="sign-nav" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="sign-prev">&#8592;</button>
+            <span id="sign-page-label">Page 1 of 1</span>
+            <button class="btn btn-ghost btn-sm" id="sign-next">&#8594;</button>
+          </div>
+
+          <!-- Step 2: Signature upload -->
+          <div id="sign-sig-section" style="display:none">
+            <div class="drop-zone sign-sig-dropzone" id="sign-sig-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">✒</div>
+                <p>Drop signature here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">PNG or JPG — white background removed automatically</span>
+                <input type="file" id="sign-sig-input" accept="image/png,image/jpeg,image/jpg" style="display:none" />
+              </div>
+            </div>
+            <img id="sign-sig-preview" class="sign-sig-preview-img" alt="Signature preview" style="display:none" />
+          </div>
+
+          <!-- Step 3: Page selection -->
+          <div id="sign-pages-section" style="display:none">
+            <p class="sign-pages-label">Apply signature to pages:</p>
+            <div class="sign-page-checks" id="sign-page-checks"></div>
+          </div>
+
+          <!-- Step 4: Filename + Download -->
+          <div id="sign-download-section" style="display:none">
+            <div class="filename-row">
+              <label for="sign-filename">Output filename</label>
+              <input type="text" id="sign-filename" class="text-input" value="signed.pdf" />
+            </div>
+            <button class="btn btn-primary" id="sign-download">Download Signed PDF</button>
+          </div>
+
+          <div class="result-area" id="sign-result"></div>
+        </div>
+
+        <!-- RIGHT: preview -->
+        <aside class="tool-preview-panel sign-preview-panel">
+          <div class="preview-card sign-preview-card">
+            <p class="preview-placeholder" id="sign-canvas-placeholder">Upload a PDF to begin</p>
+            <div class="sign-canvas-wrap" id="sign-canvas-wrap" style="display:none">
+              <canvas id="sign-canvas"></canvas>
+              <div id="sign-sig-overlay" class="sign-sig-overlay" style="display:none">
+                <img id="sign-sig-img" class="sign-sig-placed" alt="" />
+                <div class="sign-sig-resize-handle" id="sign-sig-resize"></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ══ EDIT PDF TEXT ═══════════════════════════════════════════════════════ -->
+    <section class="tool-view" id="view-edit">
+      <div class="tool-header">
+        <span class="tool-header-glyph" aria-hidden="true">✏</span>
+        <div class="tool-header-content">
+          <h1>Edit PDF Text</h1>
+          <p>Draw a box over existing text to replace it, then download the corrected PDF.</p>
+        </div>
+      </div>
+      <div class="tool-body tool-body-split edit-layout">
+
+        <!-- LEFT: controls -->
+        <div class="tool-controls">
+
+          <!-- Step 1: PDF upload -->
+          <div class="drop-zone-wrap">
+            <div class="drop-zone" id="edit-drop">
+              <div class="drop-zone-inner">
+                <div class="drop-icon">✏</div>
+                <p>Drop a PDF here or <span class="link-label">browse</span></p>
+                <span class="drop-hint">Single PDF file</span>
+                <input type="file" id="edit-input" accept=".pdf" style="display:none" />
+              </div>
+            </div>
+            <button class="btn-clear-file" id="edit-clear" style="display:none">× Clear</button>
+          </div>
+
+          <!-- Page navigation -->
+          <div id="edit-page-nav" class="edit-nav" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="edit-prev">&#8592;</button>
+            <span id="edit-page-label">Page 1 of 1</span>
+            <button class="btn btn-ghost btn-sm" id="edit-next">&#8594;</button>
+          </div>
+
+          <!-- Toolbar: font size + colour -->
+          <div id="edit-toolbar" class="edit-toolbar" style="display:none">
+            <div class="edit-toolbar-group">
+              <label class="edit-toolbar-label">Size</label>
+              <select id="edit-font-size" class="select-input edit-font-select">
+                <option value="8">8pt</option>
+                <option value="9">9pt</option>
+                <option value="10">10pt</option>
+                <option value="11" selected>11pt</option>
+                <option value="12">12pt</option>
+                <option value="14">14pt</option>
+              </select>
+            </div>
+            <div class="edit-toolbar-group">
+              <label class="edit-toolbar-label">Font</label>
+              <select id="edit-font-family" class="select-input edit-font-select">
+                <option value="Helvetica" selected>Helvetica</option>
+                <option value="HelveticaBold">Helvetica Bold</option>
+                <option value="TimesRoman">Times Roman</option>
+                <option value="Courier">Courier</option>
+              </select>
+            </div>
+            <div class="edit-toolbar-group">
+              <label class="edit-toolbar-label">Colour</label>
+              <div class="edit-color-row">
+                <button class="edit-color-swatch selected" data-color="#000000" style="background:#000000" title="Black"></button>
+                <button class="edit-color-swatch" data-color="#374151" style="background:#374151" title="Dark grey"></button>
+                <button class="edit-color-swatch" data-color="#1D4ED8" style="background:#1D4ED8" title="Blue"></button>
+                <button class="edit-color-swatch" data-color="#DC2626" style="background:#DC2626" title="Red"></button>
+              </div>
+            </div>
+            <p class="edit-toolbar-hint">Draw a box over text to replace it</p>
+          </div>
+
+          <!-- Edits list -->
+          <div id="edit-edits-list" class="edit-edits-list" style="display:none">
+            <p class="edit-edits-heading">Edits</p>
+            <div id="edit-edits-body">
+              <p class="edit-edits-empty">No edits yet</p>
+            </div>
+          </div>
+
+          <!-- Filename + Download -->
+          <div id="edit-download-section" style="display:none">
+            <div class="filename-row">
+              <label for="edit-filename">Output filename</label>
+              <input type="text" id="edit-filename" class="text-input" value="edited.pdf" />
+            </div>
+            <button class="btn btn-primary" id="edit-download">Download PDF</button>
+          </div>
+
+          <div class="result-area" id="edit-result"></div>
+        </div>
+
+        <!-- RIGHT: preview -->
+        <aside class="tool-preview-panel edit-preview-panel">
+          <div class="preview-card edit-preview-card">
+            <p class="preview-placeholder" id="edit-canvas-placeholder">Upload a PDF to begin</p>
+            <div class="edit-canvas-wrap" id="edit-canvas-wrap" style="display:none">
+              <canvas id="edit-canvas"></canvas>
+              <div id="edit-drag-rect" class="edit-drag-rect" style="display:none"></div>
+            </div>
+          </div>
+        </aside>
+
       </div>
     </section>
 
