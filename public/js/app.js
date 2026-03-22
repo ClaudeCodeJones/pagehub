@@ -4,8 +4,13 @@
 
 /* ── Theme persistence — runs before any render ─────────────────────────────── */
 (function () {
-  if (localStorage.getItem('pagehub-theme') === 'dark')
+  const isDark = localStorage.getItem('pagehub-theme') === 'dark';
+  if (isDark) {
     document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    const homeLogo = document.querySelector('.home-logo');
+    if (homeLogo) homeLogo.src = '/logos/pagehub_logo_colour.webp';
+  }
 })();
 
 /* ── CDN globals (null-safe destructure) ────────────────────────────────────── */
@@ -1687,6 +1692,8 @@ function trackUsage(key) {
       document.documentElement.removeAttribute('data-theme');
       btn.textContent = '🌙 Dark mode';
     }
+    const homeLogo = document.querySelector('.home-logo');
+    if (homeLogo) homeLogo.src = dark ? '/logos/pagehub_logo_white.webp' : '/logos/pagehub_logo_colour.webp';
     localStorage.setItem('pagehub-theme', dark ? 'dark' : 'light');
   }
 
